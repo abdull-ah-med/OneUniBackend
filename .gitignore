@@ -1,0 +1,114 @@
+# .NET Core
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Visual Studio Code
+.vscode
+.vs
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio
+.vs/
+*.csproj.user
+*.pubxml.user
+*.dbmdl
+*.jfm
+*.pfx
+*.publishsettings
+
+# Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.log
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Local development configuration
+appsettings.Development.json
+appsettings.Local.json
+*.Development.json
+*.Local.json
+
+# Entity Framework Core
+*.db
+*.db-shm
+*.db-wal
+Migrations/*.cs
+!Migrations/*Initial*.cs
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# PostgreSQL
+*.dump
+pgdata/
+
+# IDE
+*.swp
+*.swo
+*~

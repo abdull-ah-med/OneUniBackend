@@ -17,6 +17,8 @@ public partial class Application
 
     public string? ApplicationNumber { get; set; }
 
+    public ApplicationStatus Status { get; set; }
+
     public DateTime? SubmissionDate { get; set; }
 
     public bool? ScholarshipApplied { get; set; }

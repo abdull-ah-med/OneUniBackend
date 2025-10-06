@@ -13,6 +13,10 @@ public partial class Document
 
     public string DocumentName { get; set; } = null!;
 
+    public DocumentType DocumentType { get; set; }
+
+    public VerificationStatus VerificationStatus { get; set; }
+
     public string FilePath { get; set; } = null!;
 
     public int? FileSize { get; set; }

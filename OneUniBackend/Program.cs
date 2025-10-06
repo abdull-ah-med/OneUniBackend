@@ -1,45 +1,34 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using OneUniBackend.Models;
-
-// CRITICAL: Register PostgreSQL enum mappings FIRST before anything else
-NpgsqlConnection.GlobalTypeMapper.MapEnum<UserRole>("user_role");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<GenderType>("gender_type");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<EducationType>("education_type");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<TestType>("test_type");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<ApplicationStatus>("application_status");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<SessionType>("session_type");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<SessionStatus>("session_status");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<DocumentType>("document_type");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<VerificationStatus>("verification_status");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<GuardianRelation>("guardian_relation");
-NpgsqlConnection.GlobalTypeMapper.MapEnum<IdDocumentType>("id_document_type");
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 
-// Add DbContext with PostgreSQL
+// Add DbContext with PostgreSQL and enum mapping
+var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
+    builder.Configuration.GetConnectionString("DefaultConnection")
+);
+
+// Register all PostgreSQL enum types
+dataSourceBuilder.MapEnum<UserRole>("user_role");
+dataSourceBuilder.MapEnum<GenderType>("gender_type");
+dataSourceBuilder.MapEnum<EducationType>("education_type");
+dataSourceBuilder.MapEnum<TestType>("test_type");
+dataSourceBuilder.MapEnum<ApplicationStatus>("application_status");
+dataSourceBuilder.MapEnum<SessionType>("session_type");
+dataSourceBuilder.MapEnum<SessionStatus>("session_status");
+dataSourceBuilder.MapEnum<DocumentType>("document_type");
+dataSourceBuilder.MapEnum<VerificationStatus>("verification_status");
+dataSourceBuilder.MapEnum<GuardianRelation>("guardian_relation");
+dataSourceBuilder.MapEnum<IdDocumentType>("id_document_type");
+
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<OneuniContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        npgsqlOptions =>
-        {
-            // Map enums in Npgsql options as well
-            npgsqlOptions.MapEnum<UserRole>("user_role");
-            npgsqlOptions.MapEnum<GenderType>("gender_type");
-            npgsqlOptions.MapEnum<EducationType>("education_type");
-            npgsqlOptions.MapEnum<TestType>("test_type");
-            npgsqlOptions.MapEnum<ApplicationStatus>("application_status");
-            npgsqlOptions.MapEnum<SessionType>("session_type");
-            npgsqlOptions.MapEnum<SessionStatus>("session_status");
-            npgsqlOptions.MapEnum<DocumentType>("document_type");
-            npgsqlOptions.MapEnum<VerificationStatus>("verification_status");
-            npgsqlOptions.MapEnum<GuardianRelation>("guardian_relation");
-            npgsqlOptions.MapEnum<IdDocumentType>("id_document_type");
-        })
-    .UseSnakeCaseNamingConvention() // Automatically converts C# PascalCase to PostgreSQL snake_case
+    options.UseNpgsql(dataSource)
+           .UseSnakeCaseNamingConvention() // Automatically converts C# PascalCase to PostgreSQL snake_case
 );
 
 

@@ -11,6 +11,10 @@ public partial class MentorshipSession
 
     public Guid? StudentId { get; set; }
 
+    public SessionType SessionType { get; set; }
+
+    public SessionStatus SessionStatus { get; set; }
+
     public DateTime ScheduledAt { get; set; }
 
     public int? DurationMinutes { get; set; }

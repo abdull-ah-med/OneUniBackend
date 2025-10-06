@@ -45,7 +45,11 @@ public partial class OneuniContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)=> optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=oneuni;Username=postgres;Password=yourpassword");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        // Configuration is done in Program.cs via dependency injection
+        // Do not override here unless running migrations without DI
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -122,6 +126,8 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.ApplicationNumber)
                 .HasMaxLength(50)
                 .HasColumnName("application_number");
+            entity.Property(e => e.Status)
+                .HasColumnName("status");
             entity.Property(e => e.AutoSubmitted)
                 .HasDefaultValue(false)
                 .HasColumnName("auto_submitted");
@@ -295,6 +301,10 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.DocumentName)
                 .HasMaxLength(255)
                 .HasColumnName("document_name");
+            entity.Property(e => e.DocumentType)
+                .HasColumnName("document_type");
+            entity.Property(e => e.VerificationStatus)
+                .HasColumnName("verification_status");
             entity.Property(e => e.FilePath)
                 .HasMaxLength(500)
                 .HasColumnName("file_path");
@@ -343,6 +353,8 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.RecordId)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("record_id");
+            entity.Property(e => e.EducationType)
+                .HasColumnName("education_type");
             entity.Property(e => e.BoardUniversity)
                 .HasMaxLength(255)
                 .HasColumnName("board_university");
@@ -467,6 +479,10 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.SessionId)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("session_id");
+            entity.Property(e => e.SessionType)
+                .HasColumnName("session_type");
+            entity.Property(e => e.SessionStatus)
+                .HasColumnName("session_status");
             entity.Property(e => e.ActualEndTime)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("actual_end_time");
@@ -752,9 +768,15 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.FullName)
                 .HasMaxLength(255)
                 .HasColumnName("full_name");
+            entity.Property(e => e.Gender)
+                .HasColumnName("gender");
+            entity.Property(e => e.IdDocumentType)
+                .HasColumnName("id_document_type");
             entity.Property(e => e.GuardianName)
                 .HasMaxLength(255)
                 .HasColumnName("guardian_name");
+            entity.Property(e => e.GuardianRelation)
+                .HasColumnName("guardian_relation");
             entity.Property(e => e.HostelPriority)
                 .HasDefaultValue(false)
                 .HasColumnName("hostel_priority");
@@ -814,6 +836,8 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.ScoreId)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("score_id");
+            entity.Property(e => e.TestType)
+                .HasColumnName("test_type");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -970,6 +994,8 @@ public partial class OneuniContext : DbContext
             entity.Property(e => e.UserId)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("user_id");
+            entity.Property(e => e.Role)
+                .HasColumnName("role");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")

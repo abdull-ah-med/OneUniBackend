@@ -11,7 +11,11 @@ public partial class StudentProfile
 
     public string FullName { get; set; } = null!;
 
+    public GenderType? Gender { get; set; }
+
     public DateOnly? DateOfBirth { get; set; }
+
+    public IdDocumentType? IdDocumentType { get; set; }
 
     public string? Cnic { get; set; }
 
@@ -20,6 +24,8 @@ public partial class StudentProfile
     public string? NicopNumber { get; set; }
 
     public string? GuardianName { get; set; }
+
+    public GuardianRelation? GuardianRelation { get; set; }
 
     public string? City { get; set; }
 

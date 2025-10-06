@@ -9,6 +9,8 @@ public partial class TestScore
 
     public Guid? UserId { get; set; }
 
+    public TestType TestType { get; set; }
+
     public string? TestName { get; set; }
 
     public int? TotalMarks { get; set; }

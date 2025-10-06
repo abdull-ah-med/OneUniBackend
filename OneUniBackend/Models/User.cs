@@ -11,6 +11,8 @@ public partial class User
 
     public string PasswordHash { get; set; } = null!;
 
+    public UserRole Role { get; set; }
+
     public bool? IsActive { get; set; }
 
     public bool? IsVerified { get; set; }

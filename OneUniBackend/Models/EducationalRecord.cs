@@ -31,5 +31,6 @@ public partial class EducationalRecord
 
     public DateTime? UpdatedAt { get; set; }
 
+    public EducationType EducationType { get; set; }
     public virtual User? User { get; set; }
 }

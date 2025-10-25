@@ -54,4 +54,9 @@ public partial class StudentProfile
     public DateTime? DeletedAt { get; set; }
 
     public virtual User? User { get; set; }
+    public GenderType? Gender { get; set; }
+
+    public IdDocumentType? IdDocumentType { get; set; }
+
+    public GuardianRelation? GuardianRelation { get; set; }
 }

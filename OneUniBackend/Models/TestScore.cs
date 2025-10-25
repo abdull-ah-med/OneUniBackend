@@ -28,4 +28,5 @@ public partial class TestScore
     public DateTime? UpdatedAt { get; set; }
 
     public virtual User? User { get; set; }
+    public TestType TestType { get; set; }
 }

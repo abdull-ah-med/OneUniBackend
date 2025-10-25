@@ -28,6 +28,7 @@ public partial class User
     public DateTime? UpdatedAt { get; set; }
 
     public DateTime? DeletedAt { get; set; }
+    public UserRole Role { get; set; }
 
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
 

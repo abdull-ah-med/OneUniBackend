@@ -1,35 +1,37 @@
 using Microsoft.EntityFrameworkCore;
 using OneUniBackend.Models;
 using OneUniBackend.Data;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+// 1. Get the connection string
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Add DbContext with PostgreSQL and enum mapping
-var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
-    builder.Configuration.GetConnectionString("DefaultConnection")
-);
+// 2. Create a data source builder
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 
-// Register all PostgreSQL enum types
-dataSourceBuilder.MapEnum<UserRole>("user_role");
-dataSourceBuilder.MapEnum<GenderType>("gender_type");
-dataSourceBuilder.MapEnum<EducationType>("education_type");
-dataSourceBuilder.MapEnum<TestType>("test_type");
-dataSourceBuilder.MapEnum<ApplicationStatus>("application_status");
-dataSourceBuilder.MapEnum<SessionType>("session_type");
-dataSourceBuilder.MapEnum<SessionStatus>("session_status");
-dataSourceBuilder.MapEnum<DocumentType>("document_type");
-dataSourceBuilder.MapEnum<VerificationStatus>("verification_status");
-dataSourceBuilder.MapEnum<GuardianRelation>("guardian_relation");
-dataSourceBuilder.MapEnum<IdDocumentType>("id_document_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.UserRole>("user_role");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.GenderType>("gender_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.EducationType>("education_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.TestType>("test_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.ApplicationStatus>("application_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.SessionType>("session_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.SessionStatus>("session_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.DocumentType>("document_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.VerificationStatus>("verification_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.GuardianRelation>("guardian_relation");
+dataSourceBuilder.MapEnum<OneUniBackend.Models.IdDocumentType>("id_document_type");
 
+// 4. Build the data source
 var dataSource = dataSourceBuilder.Build();
 
+// 5. Register your DbContext, but now tell it to use thnew data source
 builder.Services.AddDbContext<OneUniContext>(options =>
-    options.UseNpgsql(dataSource)
-           .UseSnakeCaseNamingConvention() // Automatically converts C# PascalCase to PostgreSQL snake_case
+    options.UseNpgsql(dataSource) // <-- Use the pre-configured data source
+           .UseSnakeCaseNamingConvention()
 );
 
 

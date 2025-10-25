@@ -38,4 +38,8 @@ public partial class Document
     public virtual User? User { get; set; }
 
     public virtual User? VerifiedByNavigation { get; set; }
+
+    public DocumentType DocumentType { get; set; }
+
+    public VerificationStatus? VerificationStatus { get; set; }
 }

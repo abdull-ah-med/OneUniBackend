@@ -36,4 +36,6 @@ public partial class UniversityRepresentative
     public virtual University? University { get; set; }
 
     public virtual User? User { get; set; }
+    public VerificationStatus? VerificationStatus { get; set; }
+    
 }

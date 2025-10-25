@@ -64,4 +64,5 @@ public partial class Application
     public virtual University? University { get; set; }
 
     public virtual User? User { get; set; }
+    public ApplicationStatus? ApplicationStatus { get; set; }
 }

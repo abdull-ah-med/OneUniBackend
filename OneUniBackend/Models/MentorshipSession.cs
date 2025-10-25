@@ -46,4 +46,7 @@ public partial class MentorshipSession
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual User? Student { get; set; }
+    public SessionType SessionType { get; set; }
+
+    public SessionStatus? SessionStatus { get; set; }
 }

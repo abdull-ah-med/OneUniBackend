@@ -11,8 +11,6 @@ public partial class User
 
     public string PasswordHash { get; set; } = null!;
 
-    public UserRole Role { get; set; }
-
     public bool? IsActive { get; set; }
 
     public bool? IsVerified { get; set; }
@@ -52,4 +50,8 @@ public partial class User
     public virtual ICollection<TestScore> TestScores { get; set; } = new List<TestScore>();
 
     public virtual ICollection<UniversityRepresentative> UniversityRepresentatives { get; set; } = new List<UniversityRepresentative>();
+
+    public virtual ICollection<UserLogin> UserLogins { get; set; } = new List<UserLogin>();
+
+    public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 }

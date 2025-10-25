@@ -9,8 +9,6 @@ public partial class EducationalRecord
 
     public Guid? UserId { get; set; }
 
-    public EducationType EducationType { get; set; }
-
     public string? InstitutionName { get; set; }
 
     public string? BoardUniversity { get; set; }

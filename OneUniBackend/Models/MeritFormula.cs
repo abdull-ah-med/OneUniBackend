@@ -35,7 +35,7 @@ public partial class MeritFormula
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Program? Program { get; set; }
+    public virtual Programs? Programs { get; set; }
 
     public virtual University? University { get; set; }
 }

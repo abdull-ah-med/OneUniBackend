@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OneUniBackend.Models;
+using OneUniBackend.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ dataSourceBuilder.MapEnum<IdDocumentType>("id_document_type");
 
 var dataSource = dataSourceBuilder.Build();
 
-builder.Services.AddDbContext<OneuniContext>(options =>
+builder.Services.AddDbContext<OneUniContext>(options =>
     options.UseNpgsql(dataSource)
            .UseSnakeCaseNamingConvention() // Automatically converts C# PascalCase to PostgreSQL snake_case
 );
@@ -58,13 +59,13 @@ app.MapControllers();
 try
 {
     using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<OneuniContext>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<OneUniContext>();
     await dbContext.Database.CanConnectAsync();
     Console.WriteLine("✅ Database connection successful!");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ Database connection failed: {ex.Message}");
+    Console.WriteLine($"Database connection failed: {ex.Message}");
 }
 
 app.Run();

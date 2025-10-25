@@ -17,8 +17,6 @@ public partial class Application
 
     public string? ApplicationNumber { get; set; }
 
-    public ApplicationStatus Status { get; set; }
-
     public DateTime? SubmissionDate { get; set; }
 
     public bool? ScholarshipApplied { get; set; }
@@ -61,7 +59,7 @@ public partial class Application
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual Program? Program { get; set; }
+    public virtual Programs? Programs { get; set; }
 
     public virtual University? University { get; set; }
 

@@ -11,6 +11,9 @@ public partial class OneuniContext : DbContext
     {
     }
 
+    public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+    public DbSet<UserLogin> UserLogins { get; set; }
+
     public virtual DbSet<AdmissionCycle> AdmissionCycles { get; set; }
 
     public virtual DbSet<Application> Applications { get; set; }

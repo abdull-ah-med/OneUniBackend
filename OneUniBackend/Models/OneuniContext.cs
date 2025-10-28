@@ -1,4 +1,12 @@
-﻿// using System;
+﻿
+// -------------------------- THIS FILE IS REDUNDANT -------------------------- //
+// -------------------------------------------------------------------------------------- //
+// THIS FILE IS NO LONGER IN USE. REFER TO OneUniBackend/Data/OneUniContext.cs FOR THE CURRENT IMPLEMENTATION //
+
+
+
+
+// using System;
 // using System.Collections.Generic;
 // using Microsoft.EntityFrameworkCore;
 

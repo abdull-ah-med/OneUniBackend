@@ -1,0 +1,103 @@
+using System;
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+using OneUni.Interfaces.Services;
+using OneUni.Entities;
+using OneUni.Interfaces.Repositories;
+using OneUni.Common;
+using OneUni.Configuration;
+using Microsoft.Extensions.Options;
+
+namespace OneUni.Infrastructure.Services;
+
+public class TokenService : ITokenService
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly JWTSettings _jwtSettings;
+
+    public TokenService(IUnitOfWork unitOfWork, IOptions<JWTSettings> jwtSettings)
+    {
+        _unitOfWork = unitOfWork;
+        _jwtSettings = jwtSettings.Value;
+    }
+    public string GenerateAccessToken(User user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var secret = _jwtSettings.SecretKey;
+        if (string.IsNullOrEmpty(secret))
+            throw new InvalidOperationException("JWT_SECRET_KEY is not configured.");
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
+        };
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Issuer = _jwtSettings.Issuer,
+            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+
+            SigningCredentials = creds
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToHexString(randomBytes);
+    }
+    public string HashRefreshToken(string refreshToken)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(refreshToken);
+        var hashBytes = sha256.ComputeHash(bytes);
+        return Convert.ToHexString(hashBytes);
+    }
+    public async Task<Result<string>> SaveRefreshTokenAsync(Guid userId, string refreshTokenHash, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        if (user == null)
+        {
+            return Result<string>.Failure("USER_NOT_FOUND");
+        }
+        var newRefreshToken = new UserRefreshToken
+        {
+            UserId = user.UserId,
+            TokenHash = refreshTokenHash,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays),
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false
+        };
+        await _unitOfWork.UserRefreshTokens.AddAsync(newRefreshToken, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return Result<string>.Success(refreshTokenHash);
+
+    }
+    public async Task<Result<User>> ValidateRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
+    {
+
+        var userRefreshToken = await _unitOfWork.UserRefreshTokens.GetByRefreshTokenAsync(refreshTokenHash, cancellationToken);
+        if (userRefreshToken == null || userRefreshToken.IsRevoked == true || userRefreshToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Result<User>.Failure("INVALID_REFRESH_TOKEN");
+        }
+        var user = await _unitOfWork.Users.GetByIdAsync(userRefreshToken.UserId, cancellationToken);
+        if (user == null)
+        {
+            return Result<User>.Failure("USER_NOT_FOUND");
+        }
+        return Result<User>.Success(user);
+    }
+
+}

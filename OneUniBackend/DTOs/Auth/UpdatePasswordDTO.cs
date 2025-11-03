@@ -11,4 +11,7 @@ public class ChangePasswordRequestDTO
     [Required]
     [MinLength(6)]
     public string NewPassword { get; set; } = null!;
+    [Required]
+    public string refreshToken { get; set; } = null!;
+    
 }

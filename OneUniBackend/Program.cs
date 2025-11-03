@@ -65,7 +65,7 @@ builder.Services.AddScoped<IAdmissionCycleRepository, AdmissionCycleRepository>(
 
 // Register services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
-builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JwtSettings")); // Add this
+builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 // CORS Configuration

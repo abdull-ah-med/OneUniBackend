@@ -36,6 +36,7 @@ public class AuthService : IAuthService
         }
         var user = new User
         {
+            FullName = request.FullName,
             Email = request.Email,
             PasswordHash = _passwordService.HashPassword(request.Password),
             Role = request.Role,
@@ -128,30 +129,48 @@ public class AuthService : IAuthService
         await _unitOfWork.CommitTransactionAsync(cancellationToken);
         return Result<AuthResponseDTO>.Success(authResponse);
     }
-    public Task<Result<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO request, CancellationToken cancellationToken = default)
+    public Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
-    public Task<Result<UserDTO>> GetCurrentUserAsync(CancellationToken cancellationToken = default)
+    public async Task<Result> LogoutAsync(LogoutDTO request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var refreshTokenHash = _tokenService.HashRefreshToken(request.RefreshToken);
+        Result revokeResult = await _tokenService.RevokeRefreshTokenAsync(refreshTokenHash, cancellationToken);
+        return revokeResult;
     }
-    public Task<Result> LogoutAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> ChangePasswordAsync(Guid userID, ChangePasswordRequestDTO request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+
+        var refreshTokenHash = _tokenService.HashRefreshToken(request.refreshToken);
+        Result<User?> validateResult = await _tokenService.ValidateRefreshTokenAsync(refreshTokenHash, cancellationToken);
+
+        if (validateResult.IsSuccess == false || validateResult.Data == null || validateResult.Data.UserId != userID)
+        {
+            return Result<bool>.Failure("INVALID_REFRESH_TOKEN");
+        }
+        var user = validateResult.Data;
+        if (!_passwordService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            return Result<bool>.Failure("INVALID_CURRENT_PASSWORD");
+        }
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            user.PasswordHash = _passwordService.HashPassword(request.NewPassword);
+            await _tokenService.RevokeAllRefreshTokensForUserAsync(user.UserId, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            return Result<bool>.Failure("PASSWORD_CHANGE_FAILED");
+        }
+        return Result<bool>.Success(true);
     }
-    public Task<Result> RevokeTokenAsync(RevokeTokenRequestDTO request, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-    public Task<Result<bool>> ChangePasswordAsync(ChangePasswordRequestDTO request, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-    public Task<Result> RevokeAllRefreshTokensAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+
     public Task<Result<bool>> VerifyEmailAsync(string token, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();

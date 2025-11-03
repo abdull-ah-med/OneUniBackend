@@ -6,15 +6,17 @@ namespace OneUni.DTOs.Auth;
 public class SignUpRequestDTO
 {
     [Required]
-    [MinLength(2)]
-    public string Name { get; set; } = null!;
-    [Required]
     [EmailAddress]
     public string Email { get; set; } = null!;
 
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = null!;
+    [Required]
+    [MinLength(6)]
+    [MaxLength(255)]
+    public string? FullName { get; set; }
+
 
     [Required]
     [Compare(nameof(Password))]

@@ -19,7 +19,9 @@ public partial class User
     [Column("email")]
     [StringLength(255)]
     public string Email { get; set; } = null!;
-
+    [Column("full_name")]
+    [StringLength(255)]
+    public string? FullName { get; set; }
     [Column("password_hash")]
     [StringLength(255)]
     public string PasswordHash { get; set; } = null!;

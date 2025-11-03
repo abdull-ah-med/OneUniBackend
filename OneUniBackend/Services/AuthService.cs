@@ -129,9 +129,20 @@ public class AuthService : IAuthService
         await _unitOfWork.CommitTransactionAsync(cancellationToken);
         return Result<AuthResponseDTO>.Success(authResponse);
     }
-    public Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
+    public async Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var user = await _unitOfWork.Users.GetByIdAsync(userID, cancellationToken);
+        if (user == null)
+        {
+            return Result<UserDTO>.Failure("USER_NOT_FOUND");
+        }
+        var userDTO = new UserDTO
+        {
+            Id = user.UserId,
+            Email = user.Email,
+            Role = user.Role,
+        };
+        return Result<UserDTO>.Success(userDTO);
     }
     public async Task<Result> LogoutAsync(LogoutDTO request, CancellationToken cancellationToken = default)
     {
@@ -169,6 +180,59 @@ public class AuthService : IAuthService
             return Result<bool>.Failure("PASSWORD_CHANGE_FAILED");
         }
         return Result<bool>.Success(true);
+    }
+
+    public async Task<Result<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO request, CancellationToken cancellationToken = default)
+    {
+        var refreshTokenHash = _tokenService.HashRefreshToken(request.RefreshToken);
+        Result<User?> validateResult = await _tokenService.ValidateRefreshTokenAsync(refreshTokenHash, cancellationToken);
+
+        if (validateResult.IsSuccess == false || validateResult.Data == null)
+        {
+            return Result<AuthResponseDTO>.Failure("INVALID_REFRESH_TOKEN");
+        }
+
+        var user = validateResult.Data;
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Generate new tokens
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+            var newRefreshTokenHash = _tokenService.HashRefreshToken(newRefreshToken);
+
+            // Revoke old refresh token
+            await _tokenService.RevokeRefreshTokenAsync(refreshTokenHash, cancellationToken);
+
+            // Save new refresh token
+            Result<string> saveResult = await _tokenService.SaveRefreshTokenAsync(user.UserId, newRefreshTokenHash, cancellationToken);
+            if (saveResult.IsSuccess == false)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return Result<AuthResponseDTO>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+            }
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var authResponse = new AuthResponseDTO
+            {
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+                User = new UserDTO
+                {
+                    Id = user.UserId,
+                    Email = user.Email,
+                    Role = user.Role,
+                }
+            };
+            return Result<AuthResponseDTO>.Success(authResponse);
+        }
+        catch (Exception)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            return Result<AuthResponseDTO>.Failure("TOKEN_REFRESH_FAILED");
+        }
     }
 
     public Task<Result<bool>> VerifyEmailAsync(string token, CancellationToken cancellationToken = default)

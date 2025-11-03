@@ -84,20 +84,20 @@ public class TokenService : ITokenService
         return Result<string>.Success(refreshTokenHash);
 
     }
-    public async Task<Result<User>> ValidateRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
+    public async Task<Result<User?>> ValidateRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {
 
         var userRefreshToken = await _unitOfWork.UserRefreshTokens.GetByRefreshTokenAsync(refreshTokenHash, cancellationToken);
         if (userRefreshToken == null || userRefreshToken.IsRevoked == true || userRefreshToken.ExpiresAt <= DateTime.UtcNow)
         {
-            return Result<User>.Failure("INVALID_REFRESH_TOKEN");
+            return Result<User?>.Failure("INVALID_REFRESH_TOKEN");
         }
         var user = await _unitOfWork.Users.GetByIdAsync(userRefreshToken.UserId, cancellationToken);
         if (user == null)
         {
-            return Result<User>.Failure("USER_NOT_FOUND");
+            return Result<User?>.Failure("USER_NOT_FOUND");
         }
-        return Result<User>.Success(user);
+        return Result<User?>.Success(user);
     }
     public async Task<Result> RevokeRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {

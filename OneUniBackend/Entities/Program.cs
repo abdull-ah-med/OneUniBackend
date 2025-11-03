@@ -46,11 +46,11 @@ public partial class Program
     [Column("updated_at", TypeName = "timestamp without time zone")]
     public DateTime? UpdatedAt { get; set; }
 
-    [InverseProperty("Program")]
+    //[InverseProperty("Program")]
     public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
 
     [ForeignKey("DepartmentId")]
-    [InverseProperty("Programs")]
+    [InverseProperty("Program")]
     public virtual Department? Department { get; set; }
 
     [InverseProperty("Program")]

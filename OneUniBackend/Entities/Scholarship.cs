@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("scholarships")]
 public partial class Scholarship
@@ -56,10 +56,10 @@ public partial class Scholarship
     [Column("is_active")]
     public bool? IsActive { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("UniversityId")]

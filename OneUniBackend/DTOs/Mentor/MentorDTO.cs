@@ -1,6 +1,6 @@
-using OneUni.Enums;
+using OneUniBackend.Enums;
 
-namespace OneUni.DTOs.Mentor;
+namespace OneUniBackend.DTOs.Mentor;
 
 public class MentorDTO
 {

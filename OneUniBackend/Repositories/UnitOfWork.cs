@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using OneUni.Interfaces.Repositories;
-using OneUni.Infrastructure.Data;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Data;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {

@@ -1,10 +1,10 @@
-namespace OneUni.Enums;
+namespace OneUniBackend.Enums;
 
 public enum UserRole
 {
-    Student,
-    Mentor,
-    UniversityRepresentative,
-    Admin
+    student,
+    mentor,
+    university_representative,
+    admin
 }
 

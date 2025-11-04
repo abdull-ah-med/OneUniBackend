@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("programs")]
 [Index("DepartmentId", Name = "idx_programs_department_id")]
@@ -40,10 +40,10 @@ public partial class Program
     [Column("is_active")]
     public bool? IsActive { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     //[InverseProperty("Program")]

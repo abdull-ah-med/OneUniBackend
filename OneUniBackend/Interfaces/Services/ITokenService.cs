@@ -1,7 +1,7 @@
-using OneUni.Entities;
-using OneUni.Common;
+using OneUniBackend.Entities;
+using OneUniBackend.Common;
 
-namespace OneUni.Interfaces.Services;
+namespace OneUniBackend.Interfaces.Services;
 
 public interface ITokenService
 {

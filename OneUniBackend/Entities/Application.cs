@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using OneUni.Enums;
-using ProgramEntity = OneUni.Entities.Program;
+using OneUniBackend.Enums;
+using ProgramEntity = OneUniBackend.Entities.Program;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("applications")]
 [Index("UniversityId", "ProgramId", Name = "idx_applications_university_program")]
@@ -33,7 +33,7 @@ public partial class Application
     [StringLength(50)]
     public string? ApplicationNumber { get; set; }
 
-    [Column("submission_date", TypeName = "timestamp without time zone")]
+    [Column("submission_date", TypeName = "timestamp with time zone")]
     public DateTime? SubmissionDate { get; set; }
 
     [Column("scholarship_applied")]
@@ -81,16 +81,16 @@ public partial class Application
     [Column("auto_submitted")]
     public bool? AutoSubmitted { get; set; }
 
-    [Column("application_status")]
+    [Column("application_status", TypeName = "application_status")]
     public ApplicationStatus Status { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
+    [Column("deleted_at", TypeName = "timestamp with time zone")]
     public DateTime? DeletedAt { get; set; }
 
     [ForeignKey("CycleId")]

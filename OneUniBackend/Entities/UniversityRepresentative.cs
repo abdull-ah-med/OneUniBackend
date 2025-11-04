@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("university_representatives")]
 public partial class UniversityRepresentative
@@ -52,13 +52,13 @@ public partial class UniversityRepresentative
     [Column("is_active")]
     public bool? IsActive { get; set; }
 
-    [Column("verification_status")]
+    [Column("verification_status", TypeName = "verification_status")]
     public VerificationStatus? VerificationStatus { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("UniversityId")]

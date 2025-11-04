@@ -1,4 +1,4 @@
-namespace OneUni.Common;
+namespace OneUniBackend.Common;
 
 public class PagedResult<T>
 {

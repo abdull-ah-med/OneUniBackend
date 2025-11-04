@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using OneUni.Entities;
-using ProgramEntity = OneUni.Entities.Program;
+namespace OneUniBackend.Data;
 
-
-namespace OneUni.Infrastructure.Data;
-
+using OneUniBackend.Entities;
+using ProgramEntity = OneUniBackend.Entities.Program;
 public partial class OneUniDbContext : DbContext
 {
+    public OneUniDbContext()
+    {
+    }
+
     public OneUniDbContext(DbContextOptions<OneUniDbContext> options)
         : base(options)
     {
@@ -34,7 +36,7 @@ public partial class OneUniDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
-    public virtual DbSet<ProgramEntity> Program { get; set; }
+    public virtual DbSet<Program> Programs { get; set; }
 
     public virtual DbSet<Scholarship> Scholarships { get; set; }
 
@@ -51,6 +53,10 @@ public partial class OneUniDbContext : DbContext
     public virtual DbSet<UserLogin> UserLogins { get; set; }
 
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Database=oneuni;Username=postgres;Password=");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,9 +79,9 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.CycleId).HasName("admission_cycles_pkey");
 
             entity.Property(e => e.CycleId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.University).WithMany(p => p.AdmissionCycles)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -87,13 +93,14 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.ApplicationId).HasName("applications_pkey");
 
             entity.Property(e => e.ApplicationId).HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(e => e.Status).HasColumnType("application_status");
             entity.Property(e => e.AdmissionOffered).HasDefaultValue(false);
             entity.Property(e => e.AutoSubmitted).HasDefaultValue(false);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.HostelRequired).HasDefaultValue(false);
             entity.Property(e => e.ScholarshipApplied).HasDefaultValue(false);
             entity.Property(e => e.TransportRequired).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.Cycle).WithMany(p => p.Applications)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -117,7 +124,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.LogId).HasName("audit_logs_pkey");
 
             entity.Property(e => e.LogId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.User).WithMany(p => p.AuditLogs)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -129,9 +136,9 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.DepartmentId).HasName("departments_pkey");
 
             entity.Property(e => e.DepartmentId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.University).WithMany(p => p.Departments)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -143,10 +150,12 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.DocumentId).HasName("documents_pkey");
 
             entity.Property(e => e.DocumentId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.DocumentType).HasColumnType("document_type");
+            entity.Property(e => e.VerificationStatus).HasColumnType("verification_status");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
             entity.Property(e => e.IsRequired).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.Application).WithMany(p => p.Documents)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -166,9 +175,10 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.RecordId).HasName("educational_records_pkey");
 
             entity.Property(e => e.RecordId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.EducationType).HasColumnType("education_type");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsResultAwaited).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.User).WithMany(p => p.EducationalRecords)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -180,11 +190,10 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.MentorId).HasName("mentors_pkey");
 
             entity.Property(e => e.MentorId).HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(e => e.VerificationStatus).HasColumnType("verification_status");
             entity.Property(e => e.AverageRating).HasDefaultValueSql("0");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.TotalSessions).HasDefaultValue(0);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.University).WithMany(p => p.Mentors).HasConstraintName("mentors_university_id_fkey");
 
@@ -198,9 +207,11 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.SessionId).HasName("mentorship_sessions_pkey");
 
             entity.Property(e => e.SessionId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.SessionType).HasColumnType("session_type");
+            entity.Property(e => e.SessionStatus).HasColumnType("session_status");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.DurationMinutes).HasDefaultValue(60);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.Mentor).WithMany(p => p.MentorshipSessions)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -216,10 +227,10 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.FormulaId).HasName("merit_formulas_pkey");
 
             entity.Property(e => e.FormulaId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.InterviewWeightage).HasDefaultValueSql("0");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.Program).WithMany(p => p.MeritFormulas)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -235,7 +246,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.NotificationId).HasName("notifications_pkey");
 
             entity.Property(e => e.NotificationId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.RelatedApplication).WithMany(p => p.Notifications)
                 .OnDelete(DeleteBehavior.SetNull)
@@ -255,11 +266,11 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.ProgramId).HasName("programs_pkey");
 
             entity.Property(e => e.ProgramId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.DegreeType).HasDefaultValueSql("'BS'::character varying");
             entity.Property(e => e.DurationYears).HasDefaultValue(4);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.Department).WithMany(p => p.Program)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -271,9 +282,9 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.ScholarshipId).HasName("scholarships_pkey");
 
             entity.Property(e => e.ScholarshipId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.University).WithMany(p => p.Scholarships)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -285,14 +296,15 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.ProfileId).HasName("student_profiles_pkey");
 
             entity.Property(e => e.ProfileId).HasDefaultValueSql("uuid_generate_v4()");
+            entity.Property(e => e.Gender).HasColumnType("gender_type");
+            entity.Property(e => e.IdDocumentType).HasColumnType("id_document_type");
+            entity.Property(e => e.GuardianRelation).HasColumnType("guardian_relation");
             entity.Property(e => e.CompletionPercentage).HasDefaultValue(0);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.HostelPriority).HasDefaultValue(false);
             entity.Property(e => e.IsDisabled).HasDefaultValue(false);
             entity.Property(e => e.IsHafizQuran).HasDefaultValue(false);
             entity.Property(e => e.ProfileCompleted).HasDefaultValue(false);
             entity.Property(e => e.ScholarshipPriority).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.User).WithMany(p => p.StudentProfiles)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -304,8 +316,9 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.ScoreId).HasName("test_scores_pkey");
 
             entity.Property(e => e.ScoreId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.TestType).HasColumnType("test_type");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
             entity.HasOne(d => d.User).WithMany(p => p.TestScores)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -318,9 +331,9 @@ public partial class OneUniDbContext : DbContext
 
             entity.Property(e => e.UniversityId).HasDefaultValueSql("uuid_generate_v4()");
             entity.Property(e => e.Country).HasDefaultValueSql("'Pakistan'::character varying");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
         });
 
         modelBuilder.Entity<UniversityRepresentative>(entity =>
@@ -328,10 +341,9 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.RepId).HasName("university_representatives_pkey");
 
             entity.Property(e => e.RepId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.VerificationStatus).HasColumnType("verification_status");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsOfficial).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.University).WithMany(p => p.UniversityRepresentatives)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -347,10 +359,11 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.UserId).HasName("users_pkey");
 
             entity.Property(e => e.UserId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Role).HasColumnType("user_role");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
         });
 
         modelBuilder.Entity<UserLogin>(entity =>
@@ -365,7 +378,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.TokenId).HasName("user_refresh_tokens_pkey");
 
             entity.Property(e => e.TokenId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsRevoked).HasDefaultValue(false);
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRefreshTokens).HasConstraintName("user_refresh_tokens_user_id_fkey");

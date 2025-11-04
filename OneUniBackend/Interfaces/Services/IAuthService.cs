@@ -1,8 +1,8 @@
-using OneUni.Common;
-using OneUni.DTOs.Auth;
-using OneUni.DTOs.User;
+using OneUniBackend.Common;
+using OneUniBackend.DTOs.Auth;
+using OneUniBackend.DTOs.User;
 
-namespace OneUni.Interfaces.Services;
+namespace OneUniBackend.Interfaces.Services;
 
 public interface IAuthService
 {

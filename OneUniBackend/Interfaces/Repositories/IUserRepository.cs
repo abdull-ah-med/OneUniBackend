@@ -1,6 +1,6 @@
-using OneUni.Entities;
+using OneUniBackend.Entities;
 
-namespace OneUni.Interfaces.Repositories;
+namespace OneUniBackend.Interfaces.Repositories;
 
 public interface IUserRepository : IGenericRepository<User>
 {

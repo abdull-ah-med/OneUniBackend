@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace OneUni.DTOs.Auth;
+namespace OneUniBackend.DTOs.Auth;
 
 public class RefreshTokenRequestDTO
 {

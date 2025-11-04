@@ -1,8 +1,8 @@
-using OneUni.Entities;
-using OneUni.Enums;
-using ApplicationEntity = OneUni.Entities.Application;
+using OneUniBackend.Entities;
+using OneUniBackend.Enums;
+using ApplicationEntity = OneUniBackend.Entities.Application;
 
-namespace OneUni.Interfaces.Repositories;
+namespace OneUniBackend.Interfaces.Repositories;
 
 public interface IApplicationRepository : IGenericRepository<ApplicationEntity>
 {

@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("educational_records")]
 [Index("UserId", Name = "idx_educational_records_user_id")]
@@ -18,7 +18,7 @@ public partial class EducationalRecord
     [Column("user_id")]
     public Guid? UserId { get; set; }
 
-    [Column("education_type")]
+    [Column("education_type", TypeName = "education_type")]
     public EducationType EducationType { get; set; }
 
     [Column("institution_name")]
@@ -53,10 +53,10 @@ public partial class EducationalRecord
     [Column("is_result_awaited")]
     public bool? IsResultAwaited { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("UserId")]

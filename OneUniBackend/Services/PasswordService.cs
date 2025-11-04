@@ -1,6 +1,6 @@
-using OneUni.Interfaces.Services;
+using OneUniBackend.Interfaces.Services;
 
-namespace OneUni.Infrastructure.Services;
+namespace OneUniBackend.Infrastructure.Services;
 
 public class PasswordService : IPasswordService
 {

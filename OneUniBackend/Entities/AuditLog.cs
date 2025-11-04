@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("audit_logs")]
 public partial class AuditLog
@@ -40,7 +40,7 @@ public partial class AuditLog
     [Column("user_agent")]
     public string? UserAgent { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
     [ForeignKey("UserId")]

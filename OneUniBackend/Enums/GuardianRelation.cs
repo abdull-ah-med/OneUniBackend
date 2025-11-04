@@ -1,4 +1,4 @@
-namespace OneUni.Enums;
+namespace OneUniBackend.Enums;
 
 public enum GuardianRelation
 {

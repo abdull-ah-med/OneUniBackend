@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("test_scores")]
 [Index("UserId", Name = "idx_test_scores_user_id")]
@@ -18,7 +18,7 @@ public partial class TestScore
     [Column("user_id")]
     public Guid? UserId { get; set; }
 
-    [Column("test_type")]
+    [Column("test_type", TypeName = "test_type")]
     public TestType TestType { get; set; }
 
     [Column("test_name")]
@@ -45,10 +45,10 @@ public partial class TestScore
     [StringLength(50)]
     public string? RollNumber { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("UserId")]

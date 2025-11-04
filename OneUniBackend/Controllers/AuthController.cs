@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OneUni.DTOs.Auth;
-using OneUni.DTOs.Common;
-using OneUni.Interfaces.Services;
-using OneUni.Utils;
+using OneUniBackend.DTOs.Auth;
+using OneUniBackend.DTOs.Common;
+using OneUniBackend.Interfaces.Services;
+using OneUniBackend.Utils;
 using System.ComponentModel.DataAnnotations;
 
 namespace OneUniBackend.Controllers;
@@ -277,7 +277,7 @@ public class AuthController : ControllerBase
     /// <returns>Current user details</returns>
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(OneUni.DTOs.User.UserDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OneUniBackend.DTOs.User.UserDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]

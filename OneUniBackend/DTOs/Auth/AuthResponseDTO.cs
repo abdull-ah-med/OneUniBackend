@@ -1,6 +1,6 @@
-using OneUni.DTOs.User;
+using OneUniBackend.DTOs.User;
 
-namespace OneUni.DTOs.Auth;
+namespace OneUniBackend.DTOs.Auth;
 
 public class AuthResponseDTO
 {

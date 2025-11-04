@@ -1,4 +1,4 @@
-namespace OneUni.Interfaces.Repositories;
+namespace OneUniBackend.Interfaces.Repositories;
 
 public interface IUnitOfWork : IDisposable
 {

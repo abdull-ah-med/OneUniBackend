@@ -4,13 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Npgsql;
-using OneUni.Interfaces.Repositories;
-using OneUni.Interfaces.Services;
-using OneUni.Infrastructure.Data;
-using OneUni.Infrastructure.Repositories;
-using OneUni.Infrastructure.Services;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Interfaces.Services;
+using OneUniBackend.Data;
+using OneUniBackend.Repositories;
+using OneUniBackend.Infrastructure.Services;
 using DotNetEnv;
-using OneUni.Configuration;
+using OneUniBackend.Configuration;
 
 // Load .env file
 DotNetEnv.Env.Load();
@@ -36,17 +36,17 @@ var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username=
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 
 // Map PostgreSQL enums
-dataSourceBuilder.MapEnum<OneUni.Enums.UserRole>("user_role");
-dataSourceBuilder.MapEnum<OneUni.Enums.GenderType>("gender_type");
-dataSourceBuilder.MapEnum<OneUni.Enums.EducationType>("education_type");
-dataSourceBuilder.MapEnum<OneUni.Enums.TestType>("test_type");
-dataSourceBuilder.MapEnum<OneUni.Enums.ApplicationStatus>("application_status");
-dataSourceBuilder.MapEnum<OneUni.Enums.SessionType>("session_type");
-dataSourceBuilder.MapEnum<OneUni.Enums.SessionStatus>("session_status");
-dataSourceBuilder.MapEnum<OneUni.Enums.DocumentType>("document_type");
-dataSourceBuilder.MapEnum<OneUni.Enums.VerificationStatus>("verification_status");
-dataSourceBuilder.MapEnum<OneUni.Enums.GuardianRelation>("guardian_relation");
-dataSourceBuilder.MapEnum<OneUni.Enums.IdDocumentType>("id_document_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.UserRole>("user_role");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.GenderType>("gender_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.EducationType>("education_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.TestType>("test_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.ApplicationStatus>("application_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.SessionType>("session_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.SessionStatus>("session_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.DocumentType>("document_type");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.VerificationStatus>("verification_status");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.GuardianRelation>("guardian_relation");
+dataSourceBuilder.MapEnum<OneUniBackend.Enums.IdDocumentType>("id_document_type");
 
 var dataSource = dataSourceBuilder.Build();
 

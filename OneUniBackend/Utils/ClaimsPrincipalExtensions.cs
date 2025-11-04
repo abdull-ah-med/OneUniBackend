@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace OneUni.Utils;
+namespace OneUniBackend.Utils;
 
 public static class ClaimsPrincipalExtensions
 {

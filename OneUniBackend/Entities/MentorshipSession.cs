@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("mentorship_sessions")]
 [Index("MentorId", Name = "idx_mentorship_sessions_mentor_id")]
@@ -22,22 +22,22 @@ public partial class MentorshipSession
     [Column("student_id")]
     public Guid? StudentId { get; set; }
 
-    [Column("session_type")]
+    [Column("session_type", TypeName = "session_type")]
     public SessionType SessionType { get; set; }
 
-    [Column("session_status")]
+    [Column("session_status", TypeName = "session_status")]
     public SessionStatus SessionStatus { get; set; }
 
-    [Column("scheduled_at", TypeName = "timestamp without time zone")]
+    [Column("scheduled_at", TypeName = "timestamp with time zone")]
     public DateTime ScheduledAt { get; set; }
 
     [Column("duration_minutes")]
     public int? DurationMinutes { get; set; }
 
-    [Column("actual_start_time", TypeName = "timestamp without time zone")]
+    [Column("actual_start_time", TypeName = "timestamp with time zone")]
     public DateTime? ActualStartTime { get; set; }
 
-    [Column("actual_end_time", TypeName = "timestamp without time zone")]
+    [Column("actual_end_time", TypeName = "timestamp with time zone")]
     public DateTime? ActualEndTime { get; set; }
 
     [Column("topic")]
@@ -71,10 +71,10 @@ public partial class MentorshipSession
     [Column("student_rating")]
     public int? StudentRating { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("MentorId")]

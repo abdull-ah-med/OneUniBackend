@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using OneUni.Enums;
+using OneUniBackend.Enums;
 
-namespace OneUni.DTOs.Auth;
+namespace OneUniBackend.DTOs.Auth;
 
 public class SignUpRequestDTO
 {

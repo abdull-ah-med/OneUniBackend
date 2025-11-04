@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces.Repositories;
-using OneUni.Entities;
-using OneUni.Enums;
-using OneUni.Infrastructure.Data;
-using ApplicationEntity = OneUni.Entities.Application;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Entities;
+using OneUniBackend.Enums;
+using OneUniBackend.Data;
+using ApplicationEntity = OneUniBackend.Entities.Application;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class ApplicationRepository : GenericRepository<ApplicationEntity>, IApplicationRepository
 {

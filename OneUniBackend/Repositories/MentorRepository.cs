@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces.Repositories;
-using OneUni.Entities;
-using OneUni.Enums;
-using OneUni.Infrastructure.Data;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Entities;
+using OneUniBackend.Enums;
+using OneUniBackend.Data;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class MentorRepository : GenericRepository<Mentor>, IMentorRepository
 {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using OneUni.DTOs.University;
-using OneUni.Interfaces.Repositories;
+using OneUniBackend.DTOs.University;
+using OneUniBackend.Interfaces.Repositories;
 
-namespace OneUni.API.Controllers;
+namespace OneUniBackend.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

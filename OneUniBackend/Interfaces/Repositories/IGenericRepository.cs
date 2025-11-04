@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace OneUni.Interfaces.Repositories;
+namespace OneUniBackend.Interfaces.Repositories;
 
 public interface IGenericRepository<T> where T : class
 {

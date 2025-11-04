@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("notifications")]
 [Index("UserId", Name = "idx_notifications_user_id")]
@@ -28,7 +28,7 @@ public partial class Notification
     [StringLength(50)]
     public string? Type { get; set; }
 
-    [Column("read_at", TypeName = "timestamp without time zone")]
+    [Column("read_at", TypeName = "timestamp with time zone")]
     public DateTime? ReadAt { get; set; }
 
     [Column("related_application_id")]
@@ -37,7 +37,7 @@ public partial class Notification
     [Column("related_session_id")]
     public Guid? RelatedSessionId { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
     [ForeignKey("RelatedApplicationId")]

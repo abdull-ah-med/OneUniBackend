@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace OneUni.DTOs.Application;
+namespace OneUniBackend.DTOs.Application;
 
 public class CreateApplicationDTO
 {

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("user_refresh_tokens")]
 [Index("UserId", Name = "idx_user_refresh_tokens_user_id")]
@@ -21,10 +21,10 @@ public partial class UserRefreshToken
     [StringLength(255)]
     public string TokenHash { get; set; } = null!;
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("expires_at", TypeName = "timestamp without time zone")]
+    [Column("expires_at", TypeName = "timestamp with time zone")]
     public DateTime ExpiresAt { get; set; }
 
     [Column("is_revoked")]

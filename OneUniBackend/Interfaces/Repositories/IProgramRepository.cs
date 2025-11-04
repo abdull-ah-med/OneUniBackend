@@ -1,7 +1,7 @@
-using OneUni.Entities;
-using ProgramEntity = OneUni.Entities.Program;
+using OneUniBackend.Entities;
+using ProgramEntity = OneUniBackend.Entities.Program;
 
-namespace OneUni.Interfaces.Repositories;
+namespace OneUniBackend.Interfaces.Repositories;
 
 public interface IProgramRepository : IGenericRepository<ProgramEntity>
 {

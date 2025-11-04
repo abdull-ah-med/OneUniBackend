@@ -1,6 +1,6 @@
 using System;
 
-namespace OneUni.Configuration;
+namespace OneUniBackend.Configuration;
 
 public class JWTSettings
 {

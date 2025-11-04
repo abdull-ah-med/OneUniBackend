@@ -1,4 +1,4 @@
-namespace OneUni.DTOs.Common;
+namespace OneUniBackend.DTOs.Common;
 
 public class ErrorResponseDTO
 {

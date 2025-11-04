@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces.Repositories;
-using OneUni.Infrastructure.Data;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Data;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class GenericRepository<T> : IGenericRepository<T> where T : class
 {

@@ -1,16 +1,16 @@
 using System;
 using Microsoft.Extensions.Options;
-using OneUni.Common;
-using OneUni.DTOs.Auth;
-using OneUni.DTOs.User;
-using OneUni.Interfaces.Repositories;
-using OneUni.Interfaces.Services;
-using OneUni.Configuration;
-using OneUni.Entities;
+using OneUniBackend.Common;
+using OneUniBackend.DTOs.Auth;
+using OneUniBackend.DTOs.User;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Interfaces.Services;
+using OneUniBackend.Configuration;
+using OneUniBackend.Entities;
 using Microsoft.EntityFrameworkCore;
 
 
-namespace OneUni.Infrastructure.Services;
+namespace OneUniBackend.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {

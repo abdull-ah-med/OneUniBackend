@@ -1,4 +1,4 @@
-namespace OneUni.Interfaces.Services;
+namespace OneUniBackend.Interfaces.Services;
 
 public interface IEmailService
 {

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces.Repositories;
-using OneUni.Entities;
-using OneUni.Infrastructure.Data;
-using ProgramEntity = OneUni.Entities.Program;
-namespace OneUni.Infrastructure.Repositories;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Entities;
+using OneUniBackend.Data;
+using ProgramEntity = OneUniBackend.Entities.Program;
+namespace OneUniBackend.Repositories;
 
 public class ProgramRepository : GenericRepository<ProgramEntity>, IProgramRepository
 {

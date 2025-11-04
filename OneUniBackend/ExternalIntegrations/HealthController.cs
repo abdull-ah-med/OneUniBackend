@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace OneUni.API.Controllers;
+namespace OneUniBackend.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

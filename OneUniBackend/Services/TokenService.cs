@@ -6,14 +6,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using OneUni.Interfaces.Services;
-using OneUni.Entities;
-using OneUni.Interfaces.Repositories;
-using OneUni.Common;
-using OneUni.Configuration;
+using OneUniBackend.Interfaces.Services;
+using OneUniBackend.Entities;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Common;
+using OneUniBackend.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace OneUni.Infrastructure.Services;
+namespace OneUniBackend.Infrastructure.Services;
 
 public class TokenService : ITokenService
 {

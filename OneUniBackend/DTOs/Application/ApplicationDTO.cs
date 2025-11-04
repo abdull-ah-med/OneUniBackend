@@ -1,6 +1,6 @@
-using OneUni.Enums;
+using OneUniBackend.Enums;
 
-namespace OneUni.DTOs.Application;
+namespace OneUniBackend.DTOs.Application;
 
 public class ApplicationDTO
 {

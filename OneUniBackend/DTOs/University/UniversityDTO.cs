@@ -1,4 +1,4 @@
-namespace OneUni.DTOs.University;
+namespace OneUniBackend.DTOs.University;
 
 public class UniversityDTO
 {

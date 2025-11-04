@@ -1,11 +1,11 @@
 using System;
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces;
-using OneUni.Interfaces.Repositories;
-using OneUni.Entities;
-using OneUni.Infrastructure.Data;
+using OneUniBackend.Interfaces;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Entities;
+using OneUniBackend.Data;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class UserRefreshTokenRepository : GenericRepository<UserRefreshToken>, IUserRefreshTokenRepository
 {

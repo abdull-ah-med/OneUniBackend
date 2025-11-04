@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using OneUni.Interfaces.Repositories;
-using OneUni.Entities;
-using OneUni.Infrastructure.Data;
+using OneUniBackend.Interfaces.Repositories;
+using OneUniBackend.Entities;
+using OneUniBackend.Data;
 
-namespace OneUni.Infrastructure.Repositories;
+namespace OneUniBackend.Repositories;
 
 public class DepartmentRepository : GenericRepository<Department>, IDepartmentRepository
 {

@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("documents")]
 [Index("ApplicationId", Name = "idx_documents_application_id")]
@@ -26,7 +26,7 @@ public partial class Document
     [StringLength(255)]
     public string DocumentName { get; set; } = null!;
 
-    [Column("document_type")]
+    [Column("document_type", TypeName = "document_type")]
     public DocumentType DocumentType { get; set; }
 
     [Column("file_path")]
@@ -43,10 +43,10 @@ public partial class Document
     [Column("verified_by")]
     public Guid? VerifiedBy { get; set; }
 
-    [Column("verified_at", TypeName = "timestamp without time zone")]
+    [Column("verified_at", TypeName = "timestamp with time zone")]
     public DateTime? VerifiedAt { get; set; }
 
-    [Column("verification_status")]
+    [Column("verification_status", TypeName = "verification_status")]
     public VerificationStatus? VerificationStatus { get; set; }
 
     [Column("rejection_reason")]
@@ -58,10 +58,10 @@ public partial class Document
     [Column("display_order")]
     public int? DisplayOrder { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
     [ForeignKey("ApplicationId")]

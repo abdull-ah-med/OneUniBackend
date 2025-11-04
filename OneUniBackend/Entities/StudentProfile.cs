@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using OneUni.Enums;
-namespace OneUni.Entities;
+using OneUniBackend.Enums;
+namespace OneUniBackend.Entities;
 
 [Table("student_profiles")]
 [Index("UserId", Name = "idx_student_profiles_user_id")]
@@ -25,10 +25,10 @@ public partial class StudentProfile
     [Column("date_of_birth")]
     public DateOnly? DateOfBirth { get; set; }
 
-    [Column("gender")]
+    [Column("gender", TypeName = "gender_type")]
     public GenderType? Gender { get; set; }
 
-    [Column("id_document_type")]
+    [Column("id_document_type", TypeName = "id_document_type")]
     public IdDocumentType? IdDocumentType { get; set; }
 
     [Column("cnic")]
@@ -47,7 +47,7 @@ public partial class StudentProfile
     [StringLength(255)]
     public string? GuardianName { get; set; }
 
-    [Column("guardian_relation")]
+    [Column("guardian_relation", TypeName = "guardian_relation")]
     public GuardianRelation? GuardianRelation { get; set; }
 
     [Column("city")]
@@ -95,13 +95,13 @@ public partial class StudentProfile
     [Column("completion_percentage")]
     public int? CompletionPercentage { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
+    [Column("deleted_at", TypeName = "timestamp with time zone")]
     public DateTime? DeletedAt { get; set; }
 
     [ForeignKey("UserId")]

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using OneUni.Enums;
+using OneUniBackend.Enums;
 
-namespace OneUni.Entities;
+namespace OneUniBackend.Entities;
 
 [Table("users")]
 [Index("Email", Name = "idx_users_email")]
@@ -26,7 +26,7 @@ public partial class User
     [StringLength(255)]
     public string PasswordHash { get; set; } = null!;
 
-    [Column("role")]
+    [Column("role", TypeName = "user_role")]
     public UserRole Role { get; set; }
 
     [Column("is_active")]
@@ -43,19 +43,19 @@ public partial class User
     [StringLength(255)]
     public string? PasswordResetToken { get; set; }
 
-    [Column("password_reset_expires", TypeName = "timestamp without time zone")]
+    [Column("password_reset_expires", TypeName = "timestamp with time zone")]
     public DateTime? PasswordResetExpires { get; set; }
 
-    [Column("last_login", TypeName = "timestamp without time zone")]
+    [Column("last_login", TypeName = "timestamp with time zone")]
     public DateTime? LastLogin { get; set; }
 
-    [Column("created_at", TypeName = "timestamp without time zone")]
+    [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
-    [Column("updated_at", TypeName = "timestamp without time zone")]
+    [Column("updated_at", TypeName = "timestamp with time zone")]
     public DateTime? UpdatedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
+    [Column("deleted_at", TypeName = "timestamp with time zone")]
     public DateTime? DeletedAt { get; set; }
 
     [InverseProperty("User")]

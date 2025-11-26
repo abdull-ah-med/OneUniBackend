@@ -49,22 +49,14 @@ public class AuthService : IAuthService
             // user creation
             await _unitOfWork.Users.AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
+            var newUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
             // token generation
             accessToken = _tokenService.GenerateAccessToken(user);
             refreshToken = _tokenService.GenerateRefreshToken();
             string refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
 
             // refresh Token entity creation
-            var userRefreshToken = new UserRefreshToken
-            {
-                UserId = user.UserId,
-                TokenHash = refreshTokenHash,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays),
-                IsRevoked = false
-            };
-            await _unitOfWork.UserRefreshTokens.AddAsync(userRefreshToken, cancellationToken);
+            Result<string> refreshTokenSave = await _tokenService.SaveRefreshTokenAsync(newUser.UserId, refreshTokenHash);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             var authResponse = new AuthResponseDTO

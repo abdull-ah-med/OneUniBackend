@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using OneUniBackend.Enums;
 namespace OneUniBackend.Data;
 
 using OneUniBackend.Entities;
@@ -55,24 +56,23 @@ public partial class OneUniDbContext : DbContext
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Host=localhost;Database=oneuni;Username=postgres;Password=");
+   => optionsBuilder.UseNpgsql("Host=localhost;Database=oneuni;Username=postgres;Password=");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .HasPostgresEnum("application_status", new[] { "draft", "scheduled", "submitted", "under_review", "await_merit_list", "awaiting_fee_submission", "accepted", "rejected" })
-            .HasPostgresEnum("document_type", new[] { "matric_certificate", "intermediate_certificate", "transcript", "cnic", "passport", "nicop", "b_form", "sports_certificate", "hafiz_certificate", "income_certificate", "domicile", "other" })
-            .HasPostgresEnum("education_type", new[] { "matric", "intermediate", "a_levels", "o_levels", "equivalent" })
-            .HasPostgresEnum("gender_type", new[] { "male", "female", "other", "prefer_not_to_say" })
-            .HasPostgresEnum("guardian_relation", new[] { "father", "mother", "guardian", "other" })
-            .HasPostgresEnum("id_document_type", new[] { "cnic", "nicop", "passport", "b_form" })
-            .HasPostgresEnum("session_status", new[] { "scheduled", "completed", "cancelled", "no_show" })
-            .HasPostgresEnum("session_type", new[] { "free", "paid" })
-            .HasPostgresEnum("test_type", new[] { "NET", "ECAT", "MDCAT", "SAT", "IELTS", "TOEFL", "FAST", "LUMS", "other" })
-            .HasPostgresEnum("user_role", new[] { "student", "mentor", "university_representative", "admin" })
-            .HasPostgresEnum("verification_status", new[] { "pending", "verified", "rejected" })
-            .HasPostgresExtension("uuid-ossp");
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.UserRole>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.GenderType>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.EducationType>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.TestType>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.ApplicationStatus>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.SessionType>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.SessionStatus>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.DocumentType>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.VerificationStatus>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.GuardianRelation>();
+        modelBuilder.HasPostgresEnum<OneUniBackend.Enums.IdDocumentType>();
 
+        modelBuilder.HasPostgresExtension("uuid-ossp");
 
         modelBuilder.Entity<AdmissionCycle>(entity =>
         {
@@ -359,7 +359,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => e.UserId).HasName("users_pkey");
 
             entity.Property(e => e.UserId).HasDefaultValueSql("uuid_generate_v4()");
-            entity.Property(e => e.Role).HasColumnType("user_role");
+            entity.Property(e => e.Role).HasConversion<UserRole>().HasColumnType("user_role");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
@@ -368,6 +368,8 @@ public partial class OneUniDbContext : DbContext
 
         modelBuilder.Entity<UserLogin>(entity =>
         {
+            entity.HasKey(e => new { e.Loginprovider, e.Providerkey }).HasName("pk_user_logins");
+
             entity.HasOne(d => d.User).WithMany(p => p.UserLogins).HasConstraintName("fk_user_logins_users_userid");
         });
 

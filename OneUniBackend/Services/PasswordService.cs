@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using OneUniBackend.Interfaces.Services;
 
 namespace OneUniBackend.Infrastructure.Services;

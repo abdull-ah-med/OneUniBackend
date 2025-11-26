@@ -55,7 +55,6 @@ public partial class OneUniDbContext : DbContext
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseNpgsql("Host=localhost;Database=oneuni;Username=postgres;Password=");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -73,6 +72,7 @@ public partial class OneUniDbContext : DbContext
             .HasPostgresEnum("user_role", new[] { "student", "mentor", "university_representative", "admin" })
             .HasPostgresEnum("verification_status", new[] { "pending", "verified", "rejected" })
             .HasPostgresExtension("uuid-ossp");
+
 
         modelBuilder.Entity<AdmissionCycle>(entity =>
         {
@@ -368,8 +368,6 @@ public partial class OneUniDbContext : DbContext
 
         modelBuilder.Entity<UserLogin>(entity =>
         {
-            entity.HasKey(e => new { e.Loginprovider, e.Providerkey }).HasName("pk_user_logins");
-
             entity.HasOne(d => d.User).WithMany(p => p.UserLogins).HasConstraintName("fk_user_logins_users_userid");
         });
 

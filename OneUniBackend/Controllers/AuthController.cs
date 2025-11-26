@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using OneUniBackend.Configuration;
 using OneUniBackend.DTOs.Auth;
 using OneUniBackend.DTOs.Common;
 using OneUniBackend.Interfaces.Services;
@@ -17,11 +19,61 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
+    private readonly JWTSettings _jwtSettings;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger, IOptions<JWTSettings> jwtSettings)
     {
         _authService = authService;
         _logger = logger;
+        _jwtSettings = jwtSettings.Value;
+    }
+
+    /// <summary>
+    /// Sets authentication cookies (access token and refresh token)
+    /// </summary>
+    private void SetAuthCookies(string accessToken, string refreshToken, DateTime accessTokenExpiry)
+    {
+        // Access token cookie - sent to all /api endpoints
+        Response.Cookies.Append("access_token", accessToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api",
+            Expires = accessTokenExpiry
+        });
+
+        // Refresh token cookie - only sent to /api/auth/refresh endpoint
+        Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/auth/refresh",
+            Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
+        });
+    }
+
+    /// <summary>
+    /// Clears authentication cookies
+    /// </summary>
+    private void ClearAuthCookies()
+    {
+        Response.Cookies.Delete("access_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api"
+        });
+
+        Response.Cookies.Delete("refresh_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/auth/refresh"
+        });
     }
 
     /// <summary>
@@ -72,8 +124,17 @@ public class AuthController : ControllerBase
                 };
             }
 
+            // Set authentication cookies
+            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+
             _logger.LogInformation("User registered successfully: {Email}", request.Email);
-            return CreatedAtAction(nameof(GetCurrentUser), new { }, result.Data);
+            
+            // Return response without tokens (they're in cookies)
+            return CreatedAtAction(nameof(GetCurrentUser), new { }, new
+            {
+                expiresAt = result.Data.ExpiresAt,
+                user = result.Data.User
+            });
         }
         catch (Exception ex)
         {
@@ -134,8 +195,17 @@ public class AuthController : ControllerBase
                 };
             }
 
+            // Set authentication cookies
+            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+
             _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-            return Ok(result.Data);
+            
+            // Return response without tokens (they're in cookies)
+            return Ok(new
+            {
+                expiresAt = result.Data.ExpiresAt,
+                user = result.Data.User
+            });
         }
         catch (Exception ex)
         {
@@ -149,36 +219,37 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refresh access token using refresh token
+    /// Refresh access token using refresh token from cookie
     /// </summary>
-    /// <param name="request">Refresh token</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>New access and refresh tokens</returns>
+    /// <returns>New access and refresh tokens set as cookies</returns>
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RefreshToken(
-        [FromBody] RefreshTokenRequestDTO request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
     {
         try
         {
-            if (!ModelState.IsValid)
+            // Read refresh token from cookie
+            var refreshToken = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-                return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+                return Unauthorized(ErrorResponseDTO.FromMessage(
+                    "Refresh token not provided.",
+                    HttpContext.TraceIdentifier));
             }
 
+            var request = new RefreshTokenRequestDTO { RefreshToken = refreshToken };
             var result = await _authService.RefreshTokenAsync(request, cancellationToken);
 
             if (!result.IsSuccess)
             {
                 _logger.LogWarning("Token refresh failed: {ErrorMessage}", result.ErrorMessage);
+
+                // Clear invalid cookies
+                ClearAuthCookies();
 
                 return result.ErrorMessage switch
                 {
@@ -196,8 +267,17 @@ public class AuthController : ControllerBase
                 };
             }
 
+            // Set new authentication cookies
+            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+
             _logger.LogInformation("Token refreshed successfully");
-            return Ok(result.Data);
+            
+            // Return response without tokens (they're in cookies)
+            return Ok(new
+            {
+                expiresAt = result.Data.ExpiresAt,
+                user = result.Data.User
+            });
         }
         catch (Exception ex)
         {
@@ -211,9 +291,8 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logout user and revoke refresh token
+    /// Logout user, revoke refresh token and clear cookies
     /// </summary>
-    /// <param name="request">Refresh token to revoke</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success status</returns>
     [HttpPost("logout")]
@@ -222,38 +301,26 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Logout(
-        [FromBody] LogoutDTO request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         try
         {
-            if (!ModelState.IsValid)
+            // Read refresh token from cookie
+            var refreshToken = Request.Cookies["refresh_token"];
+            
+            // Always clear cookies, even if refresh token is missing
+            ClearAuthCookies();
+
+            if (!string.IsNullOrEmpty(refreshToken))
             {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-                return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
-            }
+                var request = new LogoutDTO { RefreshToken = refreshToken };
+                var result = await _authService.LogoutAsync(request, cancellationToken);
 
-            var result = await _authService.LogoutAsync(request, cancellationToken);
-
-            if (!result.IsSuccess)
-            {
-                _logger.LogWarning("Logout failed: {ErrorMessage}", result.ErrorMessage);
-
-                return result.ErrorMessage switch
+                if (!result.IsSuccess)
                 {
-                    "REFRESH_TOKEN_REVOKE_FAILED" => StatusCode(
-                        StatusCodes.Status500InternalServerError,
-                        ErrorResponseDTO.FromMessage(
-                            "Logout failed. Please try again later.",
-                            HttpContext.TraceIdentifier)),
-                    _ => BadRequest(ErrorResponseDTO.FromMessage(
-                        result.ErrorMessage ?? "Logout failed.",
-                        HttpContext.TraceIdentifier))
-                };
+                    _logger.LogWarning("Logout failed: {ErrorMessage}", result.ErrorMessage);
+                    // Still return success since cookies are cleared
+                }
             }
 
             _logger.LogInformation("User logged out successfully");
@@ -262,6 +329,8 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during logout");
+            // Still clear cookies on error
+            ClearAuthCookies();
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 ErrorResponseDTO.FromMessage(
@@ -337,7 +406,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ChangePassword(
-        [FromBody] ChangePasswordRequestDTO request,
+        [FromBody] ChangePasswordDTO request,
         CancellationToken cancellationToken)
     {
         try
@@ -360,7 +429,23 @@ public class AuthController : ControllerBase
                     HttpContext.TraceIdentifier));
             }
 
-            var result = await _authService.ChangePasswordAsync(userId.Value, request, cancellationToken);
+            // Read refresh token from cookie
+            var refreshToken = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Unauthorized(ErrorResponseDTO.FromMessage(
+                    "Refresh token not provided.",
+                    HttpContext.TraceIdentifier));
+            }
+
+            var changePasswordRequest = new ChangePasswordRequestDTO
+            {
+                CurrentPassword = request.CurrentPassword,
+                NewPassword = request.NewPassword,
+                refreshToken = refreshToken
+            };
+
+            var result = await _authService.ChangePasswordAsync(userId.Value, changePasswordRequest, cancellationToken);
 
             if (!result.IsSuccess)
             {
@@ -385,8 +470,11 @@ public class AuthController : ControllerBase
                 };
             }
 
+            // Clear cookies since all refresh tokens are revoked after password change
+            ClearAuthCookies();
+
             _logger.LogInformation("Password changed successfully for user {UserId}", userId);
-            return Ok(new { message = "Password changed successfully" });
+            return Ok(new { message = "Password changed successfully. Please log in again." });
         }
         catch (Exception ex)
         {

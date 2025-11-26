@@ -26,7 +26,6 @@ public partial class User
     [StringLength(255)]
     public string PasswordHash { get; set; } = null!;
 
-    [Column("role", TypeName = "user_role")]
     public UserRole Role { get; set; }
 
     [Column("is_active")]

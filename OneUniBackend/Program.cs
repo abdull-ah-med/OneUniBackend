@@ -23,7 +23,11 @@ builder.Configuration["JwtSettings:AccessTokenExpiresInMinutes"] = Environment.G
 builder.Configuration["JwtSettings:RefreshTokenExpiresInDays"] = Environment.GetEnvironmentVariable("REFRESH_TOKEN_EXPIRES_IN_DAYS") ?? "7";
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Database configuration from environment variables
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
@@ -32,10 +36,22 @@ var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "oneuni";
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "postgres";
 
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.UserRole>("user_role");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.GenderType>("gender_type");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.EducationType>("education_type");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.TestType>("test_type");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.ApplicationStatus>("application_status");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.SessionType>("session_type");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.SessionStatus>("session_status");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.DocumentType>("document_type");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.VerificationStatus>("verification_status");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.GuardianRelation>("guardian_relation");
+// NpgsqlConnection.GlobalTypeMapper.MapEnum<OneUniBackend.Enums.IdDocumentType>("id_document_type");
+
 var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 
-// Map PostgreSQL enums
+// // Map PostgreSQL enums
 dataSourceBuilder.MapEnum<OneUniBackend.Enums.UserRole>("user_role");
 dataSourceBuilder.MapEnum<OneUniBackend.Enums.GenderType>("gender_type");
 dataSourceBuilder.MapEnum<OneUniBackend.Enums.EducationType>("education_type");
@@ -52,7 +68,20 @@ var dataSource = dataSourceBuilder.Build();
 
 // Register DbContext
 builder.Services.AddDbContext<OneUniDbContext>(options =>
-    options.UseNpgsql(dataSource)
+    options.UseNpgsql(dataSource, o =>
+    {
+        o.MapEnum<OneUniBackend.Enums.UserRole>("user_role");
+        o.MapEnum<OneUniBackend.Enums.GenderType>("gender_type");
+        o.MapEnum<OneUniBackend.Enums.EducationType>("education_type");
+        o.MapEnum<OneUniBackend.Enums.TestType>("test_type");
+        o.MapEnum<OneUniBackend.Enums.ApplicationStatus>("application_status");
+        o.MapEnum<OneUniBackend.Enums.SessionType>("session_type");
+        o.MapEnum<OneUniBackend.Enums.SessionStatus>("session_status");
+        o.MapEnum<OneUniBackend.Enums.DocumentType>("document_type");
+        o.MapEnum<OneUniBackend.Enums.VerificationStatus>("verification_status");
+        o.MapEnum<OneUniBackend.Enums.GuardianRelation>("guardian_relation");
+        o.MapEnum<OneUniBackend.Enums.IdDocumentType>("id_document_type");
+    })
            .UseSnakeCaseNamingConvention());
 
 // Register repositories

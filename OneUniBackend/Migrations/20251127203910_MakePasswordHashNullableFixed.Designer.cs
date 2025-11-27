@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OneUniBackend.Data;
@@ -14,9 +15,11 @@ using OneUniBackend.Enums;
 namespace OneUniBackend.Migrations
 {
     [DbContext(typeof(OneUniDbContext))]
-    partial class OneUniDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251127203910_MakePasswordHashNullableFixed")]
+    partial class MakePasswordHashNullableFixed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

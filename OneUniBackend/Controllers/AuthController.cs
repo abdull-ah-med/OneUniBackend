@@ -148,6 +148,36 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+/// Login or register with Google
+/// </summary>
+[HttpPost("google")]
+[ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
+[ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+public async Task<IActionResult> GoogleLogin(
+    [FromBody] GoogleLoginRequestDTO request,
+    CancellationToken cancellationToken)
+{
+    if (!ModelState.IsValid)
+    {
+        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+        return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+    }
+
+    var result = await _authService.GoogleLoginAsync(request, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+        return BadRequest(ErrorResponseDTO.FromMessage(
+            result.ErrorMessage ?? "Google login failed.",
+            HttpContext.TraceIdentifier));
+    }
+
+    return Ok(result.Data);
+}
+
+
+    /// <summary>
     /// Authenticate user and receive access and refresh tokens
     /// </summary>
     /// <param name="request">Login credentials</param>

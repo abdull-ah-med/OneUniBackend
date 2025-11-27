@@ -190,6 +190,24 @@ builder.Services.AddEndpointsApiExplorer();
 //     });
 // });
 
+builder.Services.AddAuthentication()
+    .AddJwtBearer("Google", options =>
+    {
+        options.Authority = "https://accounts.google.com";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["GoogleAuth:ClientId"],
+
+            ValidateLifetime = true
+        };
+    });
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline

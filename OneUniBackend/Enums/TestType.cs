@@ -10,6 +10,6 @@ public enum TestType
     TOEFL,
     FAST,
     LUMS,
-    Other
+    other
 }
 

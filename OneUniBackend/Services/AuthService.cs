@@ -8,6 +8,12 @@ using OneUniBackend.Interfaces.Services;
 using OneUniBackend.Configuration;
 using OneUniBackend.Entities;
 using Microsoft.EntityFrameworkCore;
+using Google.Apis.Auth;
+using OneUniBackend.DTOs.Common;
+using OneUniBackend.Enums;
+using OneUniBackend.Data;
+using Microsoft.Extensions.Logging;
+using System.IdentityModel.Tokens.Jwt;
 
 
 namespace OneUniBackend.Infrastructure.Services;
@@ -18,13 +24,17 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly IPasswordService _passwordService;
     private readonly JWTSettings _jwtSettings;
+    private readonly OneUniDbContext _context;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IUnitOfWork unitOfWork, ITokenService tokenService, IPasswordService passwordService, IOptions<JWTSettings> jwtSettings)
+    public AuthService(IUnitOfWork unitOfWork, ITokenService tokenService, IPasswordService passwordService, IOptions<JWTSettings> jwtSettings, OneUniDbContext context, ILogger<AuthService> logger)
     {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _passwordService = passwordService;
         _jwtSettings = jwtSettings.Value;
+        _context = context;
+        _logger = logger;
     }
     public async Task<Result<AuthResponseDTO>> RegisterAsync(SignUpRequestDTO request, CancellationToken cancellationToken = default)
     {
@@ -226,6 +236,104 @@ public class AuthService : IAuthService
             return Result<AuthResponseDTO>.Failure("TOKEN_REFRESH_FAILED");
         }
     }
+
+public async Task<Result<AuthResponseDTO>> GoogleLoginAsync(GoogleLoginRequestDTO request, CancellationToken cancellationToken)
+{
+try
+{
+GoogleJsonWebSignature.Payload payload;
+
+    // Step 1: Validate Google Token
+    try
+    {
+        payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("GOOGLE TOKEN ERROR: " + ex.Message);
+        return Result<AuthResponseDTO>.Failure("INVALID_GOOGLE_TOKEN");
+    }
+
+    // Step 2: Find existing user
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == payload.Email, cancellationToken);
+
+    // Step 3: Create user if not found
+    if (user == null)
+    {
+        user = new User
+        {
+            UserId = Guid.NewGuid(),
+            Email = payload.Email,
+            FullName = payload.Name,
+            Role = UserRole.student,
+            IsActive = true,
+            IsVerified = true,
+            CreatedAt = DateTime.UtcNow,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString())
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // Step 4: Generate Tokens
+    var tokens = await GenerateTokensForUserAsync(user, cancellationToken);
+
+    // Step 5: Build response
+    return Result<AuthResponseDTO>.Success(new AuthResponseDTO
+    {
+        AccessToken = tokens.AccessToken,
+        RefreshToken = tokens.RefreshToken,
+        ExpiresAt = tokens.ExpiresAt,   
+        User = new UserDTO                  
+        {
+            Id = user.UserId,
+            Email = user.Email,
+            Role = user.Role
+        }
+    });
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "GOOGLE_LOGIN_FAILED");
+    return Result<AuthResponseDTO>.Failure("GOOGLE_LOGIN_FAILED");
+}
+
+}
+
+
+private async Task<AuthResponseDTO> GenerateTokensForUserAsync(User user, CancellationToken cancellationToken)
+{
+try
+{
+// 1. Generate access + refresh tokens
+var accessToken = _tokenService.GenerateAccessToken(user);
+var refreshToken = _tokenService.GenerateRefreshToken();
+var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+
+    // 2. Save refresh token in DB
+    await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
+
+    // 3. Extract expiration from access token
+    var handler = new JwtSecurityTokenHandler();
+    var token = handler.ReadJwtToken(accessToken);
+    var expiresAt = token.ValidTo;   
+
+    // 4. Return full DTO
+    return new AuthResponseDTO
+    {
+        AccessToken = accessToken,
+        RefreshToken = refreshToken,
+        ExpiresAt = expiresAt            
+    };
+}
+catch (Exception ex)
+{
+    Console.WriteLine("TOKEN_GENERATION_ERROR: " + ex.Message);
+    throw;
+}
+
+}
 
     public Task<Result<bool>> VerifyEmailAsync(string token, CancellationToken cancellationToken = default)
     {

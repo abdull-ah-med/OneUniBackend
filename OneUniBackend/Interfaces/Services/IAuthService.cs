@@ -15,5 +15,6 @@ public interface IAuthService
     Task<Result<bool>> VerifyEmailAsync(string token, CancellationToken cancellationToken = default);
     Task<Result<bool>> RequestPasswordResetAsync(string email, CancellationToken cancellationToken = default);
     Task<Result> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
+    Task<Result<AuthResponseDTO>> GoogleLoginAsync(GoogleLoginRequestDTO request, CancellationToken cancellationToken);
 }
 

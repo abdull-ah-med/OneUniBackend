@@ -128,7 +128,7 @@ public class AuthController : ControllerBase
             SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
 
             _logger.LogInformation("User registered successfully: {Email}", request.Email);
-            
+
             // Return response without tokens (they're in cookies)
             return CreatedAtAction(nameof(GetCurrentUser), new { }, new
             {
@@ -148,33 +148,45 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-/// Login or register with Google
-/// </summary>
-[HttpPost("google")]
-[ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
-[ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
-[ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
-public async Task<IActionResult> GoogleLogin(
-    [FromBody] GoogleLoginRequestDTO request,
-    CancellationToken cancellationToken)
-{
-    if (!ModelState.IsValid)
+    /// Login or register with Google
+    /// </summary>
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GoogleLogin(
+        [FromBody] GoogleLoginRequestDTO request,
+        CancellationToken cancellationToken)
     {
-        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-        return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+            }
+
+            var result = await _authService.GoogleLoginAsync(request, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(ErrorResponseDTO.FromMessage(
+                    result.ErrorMessage ?? "Google login failed.",
+                    HttpContext.TraceIdentifier));
+            }
+
+            return Ok(result.Data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during login");
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                ErrorResponseDTO.FromMessage(
+                    "An unexpected error occurred. Please try again later.",
+                    HttpContext.TraceIdentifier));
+        }
     }
-
-    var result = await _authService.GoogleLoginAsync(request, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-        return BadRequest(ErrorResponseDTO.FromMessage(
-            result.ErrorMessage ?? "Google login failed.",
-            HttpContext.TraceIdentifier));
-    }
-
-    return Ok(result.Data);
-}
 
 
     /// <summary>
@@ -229,7 +241,7 @@ public async Task<IActionResult> GoogleLogin(
             SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
 
             _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-            
+
             // Return response without tokens (they're in cookies)
             return Ok(new
             {
@@ -301,7 +313,7 @@ public async Task<IActionResult> GoogleLogin(
             SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
 
             _logger.LogInformation("Token refreshed successfully");
-            
+
             // Return response without tokens (they're in cookies)
             return Ok(new
             {
@@ -337,7 +349,7 @@ public async Task<IActionResult> GoogleLogin(
         {
             // Read refresh token from cookie
             var refreshToken = Request.Cookies["refresh_token"];
-            
+
             // Always clear cookies, even if refresh token is missing
             ClearAuthCookies();
 

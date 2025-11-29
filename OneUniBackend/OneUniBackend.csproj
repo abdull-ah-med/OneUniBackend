@@ -25,12 +25,8 @@
 
   <ItemGroup>
     <Folder Include="ExternalIntegrations/" />
-    <Folder Include="Interfaces/" />
     <Folder Include="Interfaces/External/" />
-    <Folder Include="Interfaces/Services/" />
-    <Folder Include="Middleware/" />
     <Folder Include="Models/Enums/" />
-    <Folder Include="Services/" />
     <Folder Include="Utils/" />
   </ItemGroup>
 

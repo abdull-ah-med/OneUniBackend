@@ -23,7 +23,7 @@ public partial class UserLogin
     public string? Providerdisplayname { get; set; }
 
     [Column("userid")]
-    public Guid Userid { get; set; }
+    public Guid UserId { get; set; }
 
     [ForeignKey("Userid")]
     [InverseProperty("UserLogins")]

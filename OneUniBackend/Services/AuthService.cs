@@ -130,6 +130,19 @@ public class AuthService : IAuthService
             return Result<AuthResponseDTO>.Failure("TOKEN_GENERATION_FAILED");
         }
     }
+    
+    public async Task<Result<AuthResponseDTO>> GoogleLoginAsync(GoogleUserInfo googleuserObject, CancellationToken cancellationToken)
+    {
+        try
+        {
+            User? userFromGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(googleuserObject.GoogleUserId, cancellationToken);
+            User? userFromEmail = await _unitOfWork.Users.GetByEmailAsync(googleuserObject.UserEmail, cancellationToken);
+            if(userFromGoogleID == null || userFromEmail == null || userFromGoogleID.Email != userFromEmail.Email)
+            {
+                return Result<AuthResponseDTO>.Failure("Bad Request");
+            }
+        }
+    }
     public async Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userID, cancellationToken);

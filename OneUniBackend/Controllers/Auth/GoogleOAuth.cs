@@ -6,6 +6,8 @@ using Microsoft.Extensions.Options;
 using OneUniBackend.DTOs.Auth;
 using OneUniBackend.DTOs.Common;
 using Google.Apis.Auth;
+using OneUniBackend.Common;
+using OneUniBackend.Entities;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -36,7 +38,41 @@ namespace OneUniBackend.Controllers.Auth
         {
             try
             {
-                var
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+                }
+                GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(code, cancellationToken);
+                if (googleUserObject == null)
+                {
+                    return StatusCode(
+                                    StatusCodes.Status400BadRequest,
+                                    ErrorResponseDTO.FromMessage(
+                                        "Invalid Google OAuth code.",
+                                        HttpContext.TraceIdentifier));
+                }
+                // Check if User with Google ID already exists
+                User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+                // If User exists, log them in
+                if(existingUser != null && existingUser.Email == googleUserObject.UserEmail)
+                {
+                    var authResponse = await _authService.GenerateAuthResponseAsync(existingUser, cancellationToken);
+                    _cookieService.SetAuthCookies(Response, authResponse, _jwtSettings);
+                    return Ok(authResponse);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Google OAuth callback. TraceId: {TraceId}", HttpContext.TraceIdentifier);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ErrorResponseDTO.FromMessage(
+                        "An unexpected error occurred. Please try again later.",
+                        HttpContext.TraceIdentifier));
             }
         }
     }

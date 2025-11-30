@@ -66,22 +66,33 @@ public class TokenService : ITokenService
     }
     public async Task<Result<string>> SaveRefreshTokenAsync(Guid userId, string refreshTokenHash, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
-        if (user == null)
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
         {
-            return Result<string>.Failure("USER_NOT_FOUND");
+            var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+            if (user == null)
+            {
+                return Result<string>.Failure("USER_NOT_FOUND");
+            }
+            var newRefreshToken = new UserRefreshToken
+            {
+                UserId = user.UserId,
+                TokenHash = refreshTokenHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays),
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false
+            };
+            await _unitOfWork.UserRefreshTokens.AddAsync(newRefreshToken, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            return Result<string>.Success(refreshTokenHash);
         }
-        var newRefreshToken = new UserRefreshToken
+        catch (Exception)
         {
-            UserId = user.UserId,
-            TokenHash = refreshTokenHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays),
-            CreatedAt = DateTime.UtcNow,
-            IsRevoked = false
-        };
-        await _unitOfWork.UserRefreshTokens.AddAsync(newRefreshToken, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<string>.Success(refreshTokenHash);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            return Result<string>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+        }
 
     }
     public async Task<Result<User?>> ValidateRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
@@ -108,7 +119,7 @@ public class TokenService : ITokenService
             return Result.Success();
         }
         return Result.Failure("REFRESH_TOKEN_REVOKE_FAILED");
-        
+
     }
     public async Task<Result> RevokeAllRefreshTokensForUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {

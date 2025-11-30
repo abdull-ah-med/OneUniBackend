@@ -11,12 +11,10 @@ namespace OneUniBackend.Entities;
 [Index("Userid", Name = "ix_user_logins_userid")]
 public partial class UserLogin
 {
-    [Key]
     [Column("loginprovider")]
     [StringLength(128)]
     public string Loginprovider { get; set; } = null!;
 
-    [Key]
     [Column("providerkey")]
     [StringLength(128)]
     public string Providerkey { get; set; } = null!;
@@ -25,7 +23,7 @@ public partial class UserLogin
     public string? Providerdisplayname { get; set; }
 
     [Column("userid")]
-    public Guid Userid { get; set; }
+    public Guid UserId { get; set; }
 
     [ForeignKey("Userid")]
     [InverseProperty("UserLogins")]

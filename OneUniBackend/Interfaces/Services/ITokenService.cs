@@ -7,7 +7,7 @@ public interface ITokenService
 {
     string GenerateAccessToken(User user);
     string GenerateRefreshToken();
-    Task<Result<string>> SaveRefreshTokenAsync(Guid userId, string refreshToken, CancellationToken cancellationToken = default);
+    Task<Result<string>> SaveRefreshTokenAsync(Guid userId, string refreshTokenHash, CancellationToken cancellationToken = default);
     Task<Result<User?>> ValidateRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
     Task<Result> RevokeAllRefreshTokensForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result> RevokeRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default);

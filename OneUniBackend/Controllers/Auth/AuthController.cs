@@ -8,72 +8,26 @@ using OneUniBackend.Interfaces.Services;
 using OneUniBackend.Utils;
 using System.ComponentModel.DataAnnotations;
 
-namespace OneUniBackend.Controllers;
+namespace OneUniBackend.Auth.Controllers;
 
 /// <summary>
 /// Authentication and authorization endpoints
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/auth")]
 [ApiController]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
     private readonly JWTSettings _jwtSettings;
+    private readonly ICookieService _cookieService;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger, IOptions<JWTSettings> jwtSettings)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger, IOptions<JWTSettings> jwtSettings, ICookieService cookieService)
     {
         _authService = authService;
         _logger = logger;
         _jwtSettings = jwtSettings.Value;
-    }
-
-    /// <summary>
-    /// Sets authentication cookies (access token and refresh token)
-    /// </summary>
-    private void SetAuthCookies(string accessToken, string refreshToken, DateTime accessTokenExpiry)
-    {
-        // Access token cookie - sent to all /api endpoints
-        Response.Cookies.Append("access_token", accessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api",
-            Expires = accessTokenExpiry
-        });
-
-        // Refresh token cookie - only sent to /api/auth/refresh endpoint
-        Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api/auth/refresh",
-            Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
-        });
-    }
-
-    /// <summary>
-    /// Clears authentication cookies
-    /// </summary>
-    private void ClearAuthCookies()
-    {
-        Response.Cookies.Delete("access_token", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api"
-        });
-
-        Response.Cookies.Delete("refresh_token", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api/auth/refresh"
-        });
+        _cookieService = cookieService;
     }
 
     /// <summary>
@@ -125,10 +79,10 @@ public class AuthController : ControllerBase
             }
 
             // Set authentication cookies
-            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+            _cookieService.SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken);
 
             _logger.LogInformation("User registered successfully: {Email}", request.Email);
-            
+
             // Return response without tokens (they're in cookies)
             return CreatedAtAction(nameof(GetCurrentUser), new { }, new
             {
@@ -146,6 +100,48 @@ public class AuthController : ControllerBase
                     HttpContext.TraceIdentifier));
         }
     }
+
+    /// <summary>
+    /// Login or register with Google
+    /// </summary>
+    // [HttpPost("google")]
+    // [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
+    // [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+    // public async Task<IActionResult> GoogleLogin(
+    //     [FromBody] GoogleLoginRequestDTO request,
+    //     CancellationToken cancellationToken)
+    // {
+    //     try
+    //     {
+    //         if (!ModelState.IsValid)
+    //         {
+    //             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+    //             return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+    //         }
+
+    //         var result = await _authService.GoogleLoginAsync(request, cancellationToken);
+
+    //         if (!result.IsSuccess)
+    //         {
+    //             return BadRequest(ErrorResponseDTO.FromMessage(
+    //                 result.ErrorMessage ?? "Google login failed.",
+    //                 HttpContext.TraceIdentifier));
+    //         }
+
+    //         return Ok(result.Data);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "Unexpected error during login");
+    //         return StatusCode(
+    //             StatusCodes.Status500InternalServerError,
+    //             ErrorResponseDTO.FromMessage(
+    //                 "An unexpected error occurred. Please try again later.",
+    //                 HttpContext.TraceIdentifier));
+    //     }
+    // }
+
 
     /// <summary>
     /// Authenticate user and receive access and refresh tokens
@@ -196,10 +192,10 @@ public class AuthController : ControllerBase
             }
 
             // Set authentication cookies
-            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+            _cookieService.SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken);
 
             _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-            
+
             // Return response without tokens (they're in cookies)
             return Ok(new
             {
@@ -249,7 +245,7 @@ public class AuthController : ControllerBase
                 _logger.LogWarning("Token refresh failed: {ErrorMessage}", result.ErrorMessage);
 
                 // Clear invalid cookies
-                ClearAuthCookies();
+                _cookieService.ClearAuthCookies();
 
                 return result.ErrorMessage switch
                 {
@@ -268,10 +264,10 @@ public class AuthController : ControllerBase
             }
 
             // Set new authentication cookies
-            SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken, result.Data.ExpiresAt);
+            _cookieService.SetAuthCookies(result.Data!.AccessToken, result.Data.RefreshToken);
 
             _logger.LogInformation("Token refreshed successfully");
-            
+
             // Return response without tokens (they're in cookies)
             return Ok(new
             {
@@ -307,9 +303,9 @@ public class AuthController : ControllerBase
         {
             // Read refresh token from cookie
             var refreshToken = Request.Cookies["refresh_token"];
-            
+
             // Always clear cookies, even if refresh token is missing
-            ClearAuthCookies();
+            _cookieService.ClearAuthCookies();
 
             if (!string.IsNullOrEmpty(refreshToken))
             {
@@ -330,7 +326,7 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Unexpected error during logout");
             // Still clear cookies on error
-            ClearAuthCookies();
+            _cookieService.ClearAuthCookies();
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 ErrorResponseDTO.FromMessage(
@@ -471,7 +467,7 @@ public class AuthController : ControllerBase
             }
 
             // Clear cookies since all refresh tokens are revoked after password change
-            ClearAuthCookies();
+            _cookieService.ClearAuthCookies();
 
             _logger.LogInformation("Password changed successfully for user {UserId}", userId);
             return Ok(new { message = "Password changed successfully. Please log in again." });

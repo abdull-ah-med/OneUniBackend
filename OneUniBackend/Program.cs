@@ -21,6 +21,9 @@ builder.Configuration["JwtSettings:SecretKey"] = Environment.GetEnvironmentVaria
 builder.Configuration["JwtSettings:Issuer"] = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "OneUni";
 builder.Configuration["JwtSettings:AccessTokenExpiresInMinutes"] = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN_MINUTES") ?? "60";
 builder.Configuration["JwtSettings:RefreshTokenExpiresInDays"] = Environment.GetEnvironmentVariable("REFRESH_TOKEN_EXPIRES_IN_DAYS") ?? "7";
+builder.Configuration["GoogleAuth:ClientId"] = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("GOOGLE_CLIENT_ID not configured");
+builder.Configuration["GoogleAuth:ClientSecret"] = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("GOOGLE_CLIENT_SECRET not configured");
+builder.Configuration["GoogleAuth:RedirectUri"] = Environment.GetEnvironmentVariable("GOOGLE_REDIRECT_URI") ?? "http://localhost:5000/api/auth/google/callback";
 
 // Add services to the container
 builder.Services.AddControllers()
@@ -189,6 +192,24 @@ builder.Services.AddEndpointsApiExplorer();
 //         }
 //     });
 // });
+
+builder.Services.AddAuthentication()
+    .AddJwtBearer("Google", options =>
+    {
+        options.Authority = "https://accounts.google.com";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["GoogleAuth:ClientId"],
+
+            ValidateLifetime = true
+        };
+    });
+
 
 var app = builder.Build();
 

@@ -8,6 +8,7 @@ using OneUniBackend.DTOs.Common;
 using Google.Apis.Auth;
 using OneUniBackend.Common;
 using OneUniBackend.Entities;
+using OneUniBackend.Infrastructure.Services;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -58,12 +59,11 @@ namespace OneUniBackend.Controllers.Auth
                 // Check if User with Google ID already exists
                 User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
                 // If User exists, log them in
-                if(existingUser != null && existingUser.Email == googleUserObject.UserEmail)
+                if(existingUser != null)
                 {
-                    var authResponse = await _authService.GenerateAuthResponseAsync(existingUser, cancellationToken);
-                    _cookieService.SetAuthCookies(Response, authResponse, _jwtSettings);
-                    return Ok(authResponse);
+                    var Result = await _authService.GoogleLoginAsync(googleUserObject, cancellationToken);
                 }
+                else if()
             }
             catch (Exception ex)
             {

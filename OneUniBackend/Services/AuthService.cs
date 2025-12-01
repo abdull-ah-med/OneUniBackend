@@ -173,14 +173,14 @@ public class AuthService : IAuthService
         }
 
     }
-    
+
     public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             User? existingUserByEmail = await _unitOfWork.Users.GetByEmailAsync(googleuUserObject.UserEmail, cancellationToken);
-            if(existingUserByEmail != null)
+            if (existingUserByEmail != null)
             {
                 return Result<AuthResponseDTO<GoogleUserInfo>>.Failure("USER_ALREADY_EXISTS");
             }
@@ -201,7 +201,64 @@ public class AuthService : IAuthService
             return Result<AuthResponseDTO<GoogleUserInfo>>.Failure("TOKEN_GENERATION_FAILED");
         }
     }
-    
+
+    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(CompleteGoogleSignUpRequestDTO googleUserObject, CancellationToken cancellationToken = default)
+    {
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            User? findUserByEmail = await _unitOfWork.Users.GetByEmailAsync(googleUserObject.UserEmail, cancellationToken);
+            User? findUserByGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId);
+            if (findUserByGoogleID != null || findUserByGoogleID != null)
+            {
+                return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
+
+            }
+            User newUser = new User
+            {
+                UserId = Guid.NewGuid(),
+                FullName = googleUserObject.UserName,
+                Email = googleUserObject.UserEmail,
+                Role = googleUserObject.Role,
+                CreatedAt = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow,
+            };
+            await _unitOfWork.Users.AddAsync(newUser);
+            UserLogin newUserLogin = new UserLogin
+            {
+                UserId = newUser.UserId,
+                Providerkey = googleUserObject.GoogleUserId,
+                Providerdisplayname = "google",
+                Loginprovider = "google"
+            };
+            await _unitOfWork.UserExternalLoginRepository.AddAsync(newUserLogin);
+            string accessToken, refreshToken, refreshTokenHash;
+            accessToken =  _tokenService.GenerateAccessToken(newUser);
+            refreshToken = _tokenService.GenerateRefreshToken();
+            refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+            Result<string> saveRefreshToken = await _tokenService.SaveRefreshTokenAsync(newUser.UserId, refreshTokenHash, cancellationToken);
+            await _unitOfWork.CommitTransactionAsync();
+            
+            var authResponse = new AuthResponseDTO<UserDTO>
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+                User = new UserDTO
+                {
+                    Id = newUser.UserId,
+                    Email = newUser.Email,
+                    Role = newUser.Role,
+                }
+            };
+            return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_GENERATION_FAILED");
+        }
+    }
     public async Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userID, cancellationToken);

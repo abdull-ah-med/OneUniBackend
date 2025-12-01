@@ -5,7 +5,7 @@ namespace OneUniBackend.DTOs.Auth;
 /// <summary>
 /// DTO for changing password (refresh token is read from cookie)
 /// </summary>
-public class ChangePasswordDTO
+public record ChangePasswordDTO
 {
     [Required]
     [MinLength(6)]

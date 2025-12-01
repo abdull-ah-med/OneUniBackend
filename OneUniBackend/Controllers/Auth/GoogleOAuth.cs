@@ -117,7 +117,7 @@ namespace OneUniBackend.Controllers.Auth
                                 HttpContext.TraceIdentifier))
                         };
                     }
-                    _cookieService.SetAuthCookies(Result.Data!.AccessToken, "");
+                    _cookieService.SetAuthCookies(Result.Data!.AccessToken, null);
                     _logger.LogInformation("Temporary Google signup successful for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
                     return StatusCode(StatusCodes.Status307TemporaryRedirect, new
                     {
@@ -134,6 +134,80 @@ namespace OneUniBackend.Controllers.Auth
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during Google OAuth callback. TraceId: {TraceId}", HttpContext.TraceIdentifier);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ErrorResponseDTO.FromMessage(
+                        "An unexpected error occurred. Please try again later.",
+                        HttpContext.TraceIdentifier));
+            }
+        }
+        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CompleteGoogleSignUp([FromBody] CompleteGoogleSignUpRequestDTO googleSignUpRequest, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+                }
+                GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(googleSignUpRequest.GoogleUserId, cancellationToken);
+                if (googleUserObject == null)
+                {
+                    return StatusCode(
+                                    StatusCodes.Status400BadRequest,
+                                    ErrorResponseDTO.FromMessage(
+                                        "Invalid Google OAuth code.",
+                                        HttpContext.TraceIdentifier));
+                }
+                // Check if User with Google ID already exists
+                User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+                if (existingUser != null)
+                {
+                    _cookieService.ClearAuthCookies();
+                    return StatusCode(StatusCodes.Status409Conflict, ErrorResponseDTO.FromMessage("User with similar credentials exists.", HttpContext.TraceIdentifier));
+                }
+                _cookieService.ClearAuthCookies();
+                Result<AuthResponseDTO<UserDTO>> Result = await _authService.CompleteGoogleSignupAsync(googleSignUpRequest, cancellationToken);
+                if (!Result.IsSuccess)
+                {
+                    _logger.LogWarning("Login failed for email: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
+
+                    return Result.ErrorMessage switch
+                    {
+                        "USER_ALREADY_EXISTS" => Unauthorized(ErrorResponseDTO.FromMessage(
+                            "Invalid credentials.",
+                            HttpContext.TraceIdentifier)),
+                        "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => StatusCode(
+                            StatusCodes.Status500InternalServerError,
+                            ErrorResponseDTO.FromMessage(
+                                "Authentication failed. Please try again later.",
+                                HttpContext.TraceIdentifier)),
+                        _ => BadRequest(ErrorResponseDTO.FromMessage(
+                            Result.ErrorMessage ?? "Google SignUp failed.",
+                            HttpContext.TraceIdentifier))
+                    };
+                }
+                _cookieService.SetAuthCookies(Result.Data!.AccessToken, Result.Data!.RefreshToken);
+                _logger.LogInformation("User registered successfully: {Email}", Result.Data.User!.Email);
+
+                // Return response without tokens (they're in cookies)
+                return CreatedAtAction(nameof(Result.Data.User), new { }, new
+                {
+                    expiresAt = Result.Data.ExpiresAt,
+                    user = Result.Data.User
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during completing Google signup. TraceId: {TraceId}", HttpContext.TraceIdentifier);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     ErrorResponseDTO.FromMessage(

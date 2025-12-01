@@ -12,6 +12,7 @@ using OneUniBackend.Interfaces.Repositories;
 using OneUniBackend.Common;
 using OneUniBackend.Configuration;
 using Microsoft.Extensions.Options;
+using OneUniBackend.DTOs.Auth;
 
 namespace OneUniBackend.Infrastructure.Services;
 
@@ -39,6 +40,33 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role.ToString())
+        };
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Issuer = _jwtSettings.Issuer,
+            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+
+            SigningCredentials = creds
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+    public string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo)
+    {
+       var tokenHandler = new JwtSecurityTokenHandler();
+        var secret = _jwtSettings.SecretKey;
+        if (string.IsNullOrEmpty(secret))
+            throw new InvalidOperationException("JWT_SECRET_KEY is not configured.");
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, googleUserInfo.GoogleUserId.ToString()),
+            new Claim(ClaimTypes.Email, googleUserInfo.UserEmail),
+            new Claim(ClaimTypes.Role, googleUserInfo.UserName)
         };
         var tokenDescriptor = new SecurityTokenDescriptor
         {

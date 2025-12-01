@@ -36,7 +36,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _googleOAuthService = googleOAuthService;
     }
-    public async Task<Result<AuthResponseDTO>> RegisterAsync(SignUpRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> RegisterAsync(SignUpRequestDTO request, CancellationToken cancellationToken = default)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -45,7 +45,7 @@ public class AuthService : IAuthService
             var checkUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
             if (checkUser != null)
             {
-                return Result<AuthResponseDTO>.Failure("USER_ALREADY_EXISTS");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
             }
             var user = new User
             {
@@ -67,7 +67,7 @@ public class AuthService : IAuthService
             // refresh Token save operation
             Result<string> refreshTokenSave = await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            var authResponse = new AuthResponseDTO
+            var authResponse = new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
@@ -79,15 +79,15 @@ public class AuthService : IAuthService
                     Role = user.Role,
                 }
             };
-            return Result<AuthResponseDTO>.Success(authResponse);
+            return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
         }
         catch (Exception)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result<AuthResponseDTO>.Failure("USER_REGISTRATION_FAILED");
+            return Result<AuthResponseDTO<UserDTO>>.Failure("USER_REGISTRATION_FAILED");
         }
     }
-    public async Task<Result<AuthResponseDTO>> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken = default)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -95,7 +95,7 @@ public class AuthService : IAuthService
             var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
             if (user == null || user.PasswordHash == null || !_passwordService.VerifyPassword(request.Password, user.PasswordHash))
             {
-                return Result<AuthResponseDTO>.Failure("INVALID_CREDENTIALS");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_CREDENTIALS");
             }
             string accessToken;
             string refreshToken;
@@ -107,10 +107,10 @@ public class AuthService : IAuthService
             Result<string> saveRefreshTokenResult = await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
             if (saveRefreshTokenResult.IsSuccess == false)
             {
-                return Result<AuthResponseDTO>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
             }
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            var authResponse = new AuthResponseDTO
+            var authResponse = new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
@@ -122,16 +122,16 @@ public class AuthService : IAuthService
                     Role = user.Role,
                 }
             };
-            return Result<AuthResponseDTO>.Success(authResponse);
+            return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
         }
         catch (InvalidOperationException)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result<AuthResponseDTO>.Failure("TOKEN_GENERATION_FAILED");
+            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_GENERATION_FAILED");
         }
     }
 
-    public async Task<Result<AuthResponseDTO>> GoogleLoginAsync(GoogleUserInfo googleuserObject, CancellationToken cancellationToken)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> GoogleLoginAsync(GoogleUserInfo googleuserObject, CancellationToken cancellationToken)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -140,7 +140,7 @@ public class AuthService : IAuthService
             User? userFromEmail = await _unitOfWork.Users.GetByEmailAsync(googleuserObject.UserEmail, cancellationToken);
             if (userFromGoogleID == null || userFromEmail == null || userFromEmail != userFromGoogleID || userFromGoogleID.Email != userFromEmail.Email)
             {
-                return Result<AuthResponseDTO>.Failure("INVALID_SIGNUP_REQUEST");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_SIGNUP_REQUEST");
             }
             string refreshToken, accessToken, refreshTokenHash;
             accessToken = _tokenService.GenerateAccessToken(userFromGoogleID);
@@ -150,10 +150,10 @@ public class AuthService : IAuthService
             Result<string> saveRefreshTokenResult = await _tokenService.SaveRefreshTokenAsync(userFromGoogleID.UserId, refreshTokenHash, cancellationToken);
             if (!saveRefreshTokenResult.IsSuccess)
             {
-                return Result<AuthResponseDTO>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
             }
             await _unitOfWork.CommitTransactionAsync();
-            return Result<AuthResponseDTO>.Success(new AuthResponseDTO
+            return Result<AuthResponseDTO<UserDTO>>.Success(new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
@@ -169,10 +169,39 @@ public class AuthService : IAuthService
         catch (InvalidOperationException)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result<AuthResponseDTO>.Failure("TOKEN_GENERATION_FAILED");
+            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_GENERATION_FAILED");
         }
 
     }
+    
+    public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUp(GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
+    {
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            User? existingUserByEmail = await _unitOfWork.Users.GetByEmailAsync(googleuUserObject.UserEmail, cancellationToken);
+            if(existingUserByEmail != null)
+            {
+                return Result<AuthResponseDTO<GoogleUserInfo>>.Failure("USER_ALREADY_EXISTS");
+            }
+            string tempAccessToken = _tokenService.GenerateTemporaryAccessToken(googleuUserObject);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            var authResponse = new AuthResponseDTO<GoogleUserInfo>
+            {
+                AccessToken = tempAccessToken,
+                RefreshToken = string.Empty,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+                User = googleuUserObject
+            };
+            return Result<AuthResponseDTO<GoogleUserInfo>>.Success(authResponse);
+        }
+        catch (InvalidOperationException)
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            return Result<AuthResponseDTO<GoogleUserInfo>>.Failure("TOKEN_GENERATION_FAILED");
+        }
+    }
+    
     public async Task<Result<UserDTO>> GetCurrentUserAsync(Guid userID, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userID, cancellationToken);
@@ -226,14 +255,14 @@ public class AuthService : IAuthService
         return Result<bool>.Success(true);
     }
 
-    public async Task<Result<AuthResponseDTO>> RefreshTokenAsync(RefreshTokenRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> RefreshTokenAsync(RefreshTokenRequestDTO request, CancellationToken cancellationToken = default)
     {
         var refreshTokenHash = _tokenService.HashRefreshToken(request.RefreshToken);
         Result<User?> validateResult = await _tokenService.ValidateRefreshTokenAsync(refreshTokenHash, cancellationToken);
 
         if (validateResult.IsSuccess == false || validateResult.Data == null)
         {
-            return Result<AuthResponseDTO>.Failure("INVALID_REFRESH_TOKEN");
+            return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_REFRESH_TOKEN");
         }
 
         var user = validateResult.Data;
@@ -253,12 +282,12 @@ public class AuthService : IAuthService
             if (saveResult.IsSuccess == false)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                return Result<AuthResponseDTO>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+                return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
             }
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            var authResponse = new AuthResponseDTO
+            var authResponse = new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,
                 RefreshToken = newRefreshToken,
@@ -270,12 +299,12 @@ public class AuthService : IAuthService
                     Role = user.Role,
                 }
             };
-            return Result<AuthResponseDTO>.Success(authResponse);
+            return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
         }
         catch (Exception)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result<AuthResponseDTO>.Failure("TOKEN_REFRESH_FAILED");
+            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_REFRESH_FAILED");
         }
     }
 
@@ -354,7 +383,7 @@ public class AuthService : IAuthService
     // }
 
 
-    private async Task<AuthResponseDTO> GenerateTokensForUserAsync(User user, CancellationToken cancellationToken)
+    private async Task<AuthResponseDTO<UserDTO>> GenerateTokensForUserAsync(User user, CancellationToken cancellationToken)
     {
         try
         {
@@ -372,7 +401,7 @@ public class AuthService : IAuthService
             var expiresAt = token.ValidTo;
 
             // 4. Return full DTO
-            return new AuthResponseDTO
+            return new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,

@@ -1,4 +1,5 @@
 using OneUniBackend.Entities;
+using OneUniBackend.DTOs.Auth;
 using OneUniBackend.Common;
 
 namespace OneUniBackend.Interfaces.Services;
@@ -12,6 +13,7 @@ public interface ITokenService
     Task<Result> RevokeAllRefreshTokensForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result> RevokeRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default);
     Task RemoveExpiredRefreshTokensAsync(CancellationToken cancellationToken = default);
+    string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo);
     string HashRefreshToken(string refreshToken);
 
 }

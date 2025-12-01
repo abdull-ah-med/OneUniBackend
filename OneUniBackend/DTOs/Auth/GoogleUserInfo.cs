@@ -10,8 +10,10 @@ public class GoogleUserInfo
     public string UserName { get; set; }
     [Required]
     public string GoogleUserId { get; set; }
+    [Required]
     public string UserEmail { get; set; }
     [Required]
     public bool isEmailVerified { get; set; }
+    public UserRole? Role { get; set; }
 
 }

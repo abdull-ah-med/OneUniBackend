@@ -9,6 +9,7 @@ using Google.Apis.Auth;
 using OneUniBackend.Common;
 using OneUniBackend.Entities;
 using OneUniBackend.Infrastructure.Services;
+using OneUniBackend.DTOs.User;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -30,8 +31,9 @@ namespace OneUniBackend.Controllers.Auth
             _cookieService = cookieService;
         }
         [HttpGet("callback")]
-        [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AuthResponseDTO<GoogleUserInfo>), StatusCodes.Status307TemporaryRedirect)]
         [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
@@ -63,7 +65,11 @@ namespace OneUniBackend.Controllers.Auth
                 {
                     var Result = await _authService.GoogleLoginAsync(googleUserObject, cancellationToken);
                 }
-                else if()
+                // Temporary signup flow
+                else if(existingUser == null)
+                {
+                    
+                }
             }
             catch (Exception ex)
             {

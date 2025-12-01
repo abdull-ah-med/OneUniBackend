@@ -61,15 +61,75 @@ namespace OneUniBackend.Controllers.Auth
                 // Check if User with Google ID already exists
                 User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
                 // If User exists, log them in
-                if(existingUser != null)
+                if (existingUser != null)
                 {
-                    var Result = await _authService.GoogleLoginAsync(googleUserObject, cancellationToken);
+                    Result<AuthResponseDTO<UserDTO>> Result = await _authService.GoogleLoginAsync(googleUserObject, cancellationToken);
+                    if (!Result.IsSuccess)
+                    {
+                        _logger.LogWarning("Login failed for email: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
+
+                        return Result.ErrorMessage switch
+                        {
+                            "INVALID_SIGNUP_REQUEST" => Unauthorized(ErrorResponseDTO.FromMessage(
+                                "Invalid credentials.",
+                                HttpContext.TraceIdentifier)),
+                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => StatusCode(
+                                StatusCodes.Status500InternalServerError,
+                                ErrorResponseDTO.FromMessage(
+                                    "Authentication failed. Please try again later.",
+                                    HttpContext.TraceIdentifier)),
+                            _ => BadRequest(ErrorResponseDTO.FromMessage(
+                                Result.ErrorMessage ?? "Google SignUp failed.",
+                                HttpContext.TraceIdentifier))
+                        };
+                    }
+                    _cookieService.SetAuthCookies(Result.Data!.AccessToken, Result.Data!.RefreshToken);
+                    _logger.LogInformation("Token refreshed successfully");
+
+                    // Return response without tokens (they're in cookies)
+                    return Ok(new
+                    {
+                        expiresAt = Result.Data.ExpiresAt,
+                        user = Result.Data.User
+                    });
+
                 }
                 // Temporary signup flow
-                else if(existingUser == null)
+                else if (existingUser == null)
                 {
-                    
+                    Result<AuthResponseDTO<GoogleUserInfo>> Result = await _authService.TempGoogleSignUpAsync(googleUserObject, cancellationToken);
+                    if (!Result.IsSuccess)
+                    {
+                        _logger.LogWarning("Temporary signup failed for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
+
+                        return Result.ErrorMessage switch
+                        {
+                            "USER_ALREADY_EXISTS" => Unauthorized(ErrorResponseDTO.FromMessage(
+                                "User with matching credentials already exists.",
+                                HttpContext.TraceIdentifier)),
+                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => StatusCode(
+                                StatusCodes.Status500InternalServerError,
+                                ErrorResponseDTO.FromMessage(
+                                    "Authentication failed. Please try again later.",
+                                    HttpContext.TraceIdentifier)),
+                            _ => BadRequest(ErrorResponseDTO.FromMessage(
+                                Result.ErrorMessage ?? "Google Signin failed.",
+                                HttpContext.TraceIdentifier))
+                        };
+                    }
+                    _cookieService.SetAuthCookies(Result.Data!.AccessToken, "");
+                    _logger.LogInformation("Temporary Google signup successful for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
+                    return StatusCode(StatusCodes.Status307TemporaryRedirect, new
+                    {
+                        expiresAt = Result.Data.ExpiresAt,
+                        user = Result.Data.User
+                    });
                 }
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ErrorResponseDTO.FromMessage(
+                        "An unexpected error occurred. Please try again later.",
+                        HttpContext.TraceIdentifier));
             }
             catch (Exception ex)
             {

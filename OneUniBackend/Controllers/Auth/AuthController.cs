@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using OneUniBackend.Configuration;
 using OneUniBackend.DTOs.Auth;
 using OneUniBackend.DTOs.Common;
+using OneUniBackend.DTOs.User;
 using OneUniBackend.Interfaces.Services;
 using OneUniBackend.Utils;
 using System.ComponentModel.DataAnnotations;
@@ -37,7 +38,7 @@ public class AuthController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Authentication response with access and refresh tokens</returns>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
@@ -150,7 +151,7 @@ public class AuthController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Authentication response with tokens</returns>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]

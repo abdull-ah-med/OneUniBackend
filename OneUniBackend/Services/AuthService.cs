@@ -174,7 +174,7 @@ public class AuthService : IAuthService
 
     }
     
-    public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUp(GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
+    public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try

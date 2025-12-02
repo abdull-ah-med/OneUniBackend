@@ -11,11 +11,11 @@ public class SignUpRequestDTO
 
     [Required]
     [MinLength(6)]
-    public string Password { get; set; } = null!;
-    [Required]
-    [MinLength(6)]
     [MaxLength(255)]
     public string? FullName { get; set; }
+    [Required]
+    [MinLength(6)]
+    public string Password { get; set; } = null!;
 
 
     [Required]

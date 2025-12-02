@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 
 
-namespace OneUniBackend.Infrastructure.Services;
+namespace OneUniBackend.Services;
 
 public class AuthService : IAuthService
 {
@@ -39,8 +39,8 @@ public class AuthService : IAuthService
     public async Task<Result<AuthResponseDTO<UserDTO>>> RegisterAsync(SignUpRequestDTO request, CancellationToken cancellationToken = default)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
-        try
-        {
+        // try
+        // {
             string refreshToken, accessToken;
             var checkUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
             if (checkUser != null)
@@ -66,6 +66,11 @@ public class AuthService : IAuthService
 
             // refresh Token save operation
             Result<string> refreshTokenSave = await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
+            if (!string.IsNullOrEmpty(refreshTokenSave.ErrorMessage))
+            {
+                
+                return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+            }
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             var authResponse = new AuthResponseDTO<UserDTO>
             {
@@ -80,12 +85,12 @@ public class AuthService : IAuthService
                 }
             };
             return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
-        }
-        catch (Exception)
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return Result<AuthResponseDTO<UserDTO>>.Failure("USER_REGISTRATION_FAILED");
-        }
+        // }
+        // catch (Exception)
+        // {
+        //     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+        //     return Result<AuthResponseDTO<UserDTO>>.Failure("USER_REGISTRATION_FAILED");
+        // }
     }
     public async Task<Result<AuthResponseDTO<UserDTO>>> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken = default)
     {

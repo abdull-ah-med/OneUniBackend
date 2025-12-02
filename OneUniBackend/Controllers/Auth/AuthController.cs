@@ -70,8 +70,7 @@ public class AuthController : ControllerBase
                         HttpContext.TraceIdentifier)),
                     "USER_REGISTRATION_FAILED" => StatusCode(
                         StatusCodes.Status500InternalServerError,
-                        ErrorResponseDTO.FromMessage(
-                            "Failed to register user. Please try again later.",
+                        ErrorResponseDTO.FromMessage(result.ErrorMessage,
                             HttpContext.TraceIdentifier)),
                     _ => BadRequest(ErrorResponseDTO.FromMessage(
                         result.ErrorMessage ?? "Registration failed.",

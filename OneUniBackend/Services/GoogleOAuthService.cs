@@ -21,7 +21,7 @@ public class GoogleOAuthService : IGoogleOAuthService
     {
         _unitOfWork = unitOfWork;
         _clientId = config["GoogleAuth:ClientId"] ?? throw new ArgumentNullException("GoogleAuth:ClientId");
-        _clientSecret = config["ClientSecret:ClientSecret"] ?? throw new ArgumentNullException("GoogleAuth:ClientSecret");
+        _clientSecret = config["GoogleAuth:ClientSecret"] ?? throw new ArgumentNullException("GoogleAuth:ClientSecret");
         _redirectURI = config["GoogleAuth:RedirectUri"] ?? throw new ArgumentNullException("GoogleAuth:RedirectUri");
         _flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
         {
@@ -36,7 +36,6 @@ public class GoogleOAuthService : IGoogleOAuthService
 
     public async Task<User?> GetUserByGoogleIDAsync(string googleID, CancellationToken cancellationToken = default)
     {
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             var user = await _unitOfWork.UserExternalLoginRepository

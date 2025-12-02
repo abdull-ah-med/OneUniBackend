@@ -1,7 +1,7 @@
 using BCrypt.Net;
 using OneUniBackend.Interfaces.Services;
 
-namespace OneUniBackend.Infrastructure.Services;
+namespace OneUniBackend.Services;
 
 public class PasswordService : IPasswordService
 {

@@ -8,7 +8,7 @@ using OneUniBackend.DTOs.Common;
 using Google.Apis.Auth;
 using OneUniBackend.Common;
 using OneUniBackend.Entities;
-using OneUniBackend.Infrastructure.Services;
+using OneUniBackend.Services;
 using OneUniBackend.DTOs.User;
 namespace OneUniBackend.Controllers.Auth
 {

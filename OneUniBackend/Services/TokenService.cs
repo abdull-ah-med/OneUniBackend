@@ -14,7 +14,7 @@ using OneUniBackend.Configuration;
 using Microsoft.Extensions.Options;
 using OneUniBackend.DTOs.Auth;
 
-namespace OneUniBackend.Infrastructure.Services;
+namespace OneUniBackend.Services;
 
 public class TokenService : ITokenService
 {
@@ -96,7 +96,6 @@ public class TokenService : ITokenService
     }
     public async Task<Result<string>> SaveRefreshTokenAsync(Guid userId, string refreshTokenHash, CancellationToken cancellationToken = default)
     {
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
@@ -114,13 +113,11 @@ public class TokenService : ITokenService
             };
             await _unitOfWork.UserRefreshTokens.AddAsync(newRefreshToken, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return Result<string>.Success(refreshTokenHash);
         }
         catch (Exception)
         {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             return Result<string>.Failure("REFRESH_TOKEN_SAVE_FAILED");
         }
 

@@ -233,6 +233,7 @@ public class AuthController : ControllerBase
             var refreshToken = Request.Cookies["refresh_token"];
             if (string.IsNullOrEmpty(refreshToken))
             {
+                _cookieService.ClearAuthCookies();
                 return Unauthorized(ErrorResponseDTO.FromMessage(
                     "Refresh token not provided.",
                     HttpContext.TraceIdentifier));
@@ -341,37 +342,37 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Current user details</returns>
-    [HttpGet("me")]
-    [Authorize]
-    [ProducesResponseType(typeof(OneUniBackend.DTOs.User.UserDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
-    {
-        try
+        [HttpGet("me")]
+        [Authorize]
+        [ProducesResponseType(typeof(OneUniBackend.DTOs.User.UserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
         {
-            var userId = User.GetUserId();
-            if (userId == null)
+            try
             {
-                _logger.LogWarning("User ID not found in token claims");
-                return Unauthorized(ErrorResponseDTO.FromMessage(
-                    "Invalid authentication token.",
-                    HttpContext.TraceIdentifier));
-            }
-
-            var result = await _authService.GetCurrentUserAsync(userId.Value, cancellationToken);
-
-            if (!result.IsSuccess)
-            {
-                _logger.LogWarning("Failed to get current user: {ErrorMessage}", result.ErrorMessage);
-
-                return result.ErrorMessage switch
+                var userId = User.GetUserId();
+                if (userId == null)
                 {
-                    "USER_NOT_FOUND" => NotFound(ErrorResponseDTO.FromMessage(
-                        "User not found.",
-                        HttpContext.TraceIdentifier)),
-                    _ => BadRequest(ErrorResponseDTO.FromMessage(
+                    _logger.LogWarning("User ID not found in token claims");
+                    return Unauthorized(ErrorResponseDTO.FromMessage(
+                        "Invalid authentication token.",
+                        HttpContext.TraceIdentifier));
+                }
+
+                var result = await _authService.GetCurrentUserAsync(userId.Value, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    _logger.LogWarning("Failed to get current user: {ErrorMessage}", result.ErrorMessage);
+
+                    return result.ErrorMessage switch
+                    {
+                        "USER_NOT_FOUND" => NotFound(ErrorResponseDTO.FromMessage(
+                            "User not found.",
+                            HttpContext.TraceIdentifier)),
+                        _ => BadRequest(ErrorResponseDTO.FromMessage(
                         result.ErrorMessage ?? "Failed to retrieve user information.",
                         HttpContext.TraceIdentifier))
                 };

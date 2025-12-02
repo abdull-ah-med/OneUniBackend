@@ -19,12 +19,14 @@ namespace OneUniBackend.Infrastructure.Services;
 public class TokenService : ITokenService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly TokenValidationParameters _validationParameters;
     private readonly JWTSettings _jwtSettings;
 
-    public TokenService(IUnitOfWork unitOfWork, IOptions<JWTSettings> jwtSettings)
+    public TokenService(TokenValidationParameters validationParameters, IUnitOfWork unitOfWork, IOptions<JWTSettings> jwtSettings)
     {
         _unitOfWork = unitOfWork;
         _jwtSettings = jwtSettings.Value;
+        _validationParameters = validationParameters;
     }
     public string GenerateAccessToken(User user)
     {
@@ -55,7 +57,7 @@ public class TokenService : ITokenService
     }
     public string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo)
     {
-       var tokenHandler = new JwtSecurityTokenHandler();
+        var tokenHandler = new JwtSecurityTokenHandler();
         var secret = _jwtSettings.SecretKey;
         if (string.IsNullOrEmpty(secret))
             throw new InvalidOperationException("JWT_SECRET_KEY is not configured.");
@@ -181,19 +183,10 @@ public class TokenService : ITokenService
                 return Result<GoogleUserInfo>.Failure("JWT_SECRET_KEY_NOT_CONFIGURED");
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = securityKey,
-                ValidateIssuer = true,
-                ValidIssuer = _jwtSettings.Issuer,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-
+            var validationParameters = _validationParameters.Clone();
+            validationParameters.ValidateLifetime = true;
             var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-            
+
             var googleUserIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var emailClaim = principal.FindFirst(ClaimTypes.Email)?.Value;
             var userNameClaim = principal.FindFirst(ClaimTypes.Role)?.Value; // Note: Using Role claim for UserName in temporary token

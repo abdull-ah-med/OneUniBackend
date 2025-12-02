@@ -104,10 +104,19 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+var tokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidateAudience = false,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!)),
+    ClockSkew = TimeSpan.Zero
+};
 
-// JWT Authentication
-var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET not configured");
-var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "OneUni";
+builder.Services.AddSingleton(tokenValidationParameters);
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -117,19 +126,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = false;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = false,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
-        ClockSkew = TimeSpan.Zero
-    };
-    
+    options.TokenValidationParameters = tokenValidationParameters;
     // Read access token from HTTP-only cookie
     options.Events = new JwtBearerEvents
     {

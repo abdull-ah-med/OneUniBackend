@@ -202,14 +202,29 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(CompleteGoogleSignUpRequestDTO googleUserObject, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(CompleteGoogleSignUpRequestDTO googleUserObject, string temporaryAccessToken, CancellationToken cancellationToken = default)
     {
+        // Validate temporary access token from cookie
+        Result<GoogleUserInfo> tokenValidationResult = _tokenService.ValidateTemporaryAccessToken(temporaryAccessToken);
+        if (!tokenValidationResult.IsSuccess || tokenValidationResult.Data == null)
+        {
+            return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_TEMPORARY_TOKEN");
+        }
+
+        var tokenData = tokenValidationResult.Data;
+        
+        // Ensure the GoogleUserId and email from request match the token
+        if (tokenData.GoogleUserId != googleUserObject.GoogleUserId || tokenData.UserEmail != googleUserObject.UserEmail)
+        {
+            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_MISMATCH");
+        }
+
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             User? findUserByEmail = await _unitOfWork.Users.GetByEmailAsync(googleUserObject.UserEmail, cancellationToken);
-            User? findUserByGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId);
-            if (findUserByGoogleID != null || findUserByGoogleID != null)
+            User? findUserByGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+            if (findUserByEmail != null || findUserByGoogleID != null)
             {
                 return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
 

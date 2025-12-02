@@ -15,6 +15,7 @@ public interface ITokenService
     Task RemoveExpiredRefreshTokensAsync(CancellationToken cancellationToken = default);
     string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo);
     string HashRefreshToken(string refreshToken);
+    Result<GoogleUserInfo> ValidateTemporaryAccessToken(string token);
 
 }
 

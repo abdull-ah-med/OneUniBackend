@@ -1,6 +1,7 @@
 using OneUniBackend.Common;
 using OneUniBackend.DTOs.Auth;
 using OneUniBackend.DTOs.User;
+using OneUniBackend.Enums;
 
 namespace OneUniBackend.Interfaces.Services;
 
@@ -16,7 +17,7 @@ public interface IAuthService
     Task<Result<bool>> RequestPasswordResetAsync(string email, CancellationToken cancellationToken = default);
     Task<Result> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
     Task<Result<AuthResponseDTO<UserDTO>>> GoogleLoginAsync(GoogleUserInfo googleuserObject, CancellationToken cancellationToken);
-    Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(GoogleUserInfo googleUserObject, CancellationToken cancellationToken);
-    Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(CompleteGoogleSignUpRequestDTO googleUserObject, string temporaryAccessToken, CancellationToken cancellationToken = default);    
+    Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(string code, GoogleUserInfo googleUserObject, CancellationToken cancellationToken);
+    Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRole userRole, string temporaryAccessToken, CancellationToken cancellationToken = default);    
 }
 

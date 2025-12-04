@@ -41,50 +41,50 @@ public class AuthService : IAuthService
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         // try
         // {
-            string refreshToken, accessToken;
-            var checkUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
-            if (checkUser != null)
-            {
-                return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
-            }
-            var user = new User
-            {
-                UserId = Guid.NewGuid(),
-                FullName = request.FullName,
-                Email = request.Email,
-                PasswordHash = _passwordService.HashPassword(request.Password),
-                Role = request.Role,
-                CreatedAt = DateTime.UtcNow,
+        string refreshToken, accessToken;
+        var checkUser = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken: cancellationToken);
+        if (checkUser != null)
+        {
+            return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
+        }
+        var user = new User
+        {
+            UserId = Guid.NewGuid(),
+            FullName = request.FullName,
+            Email = request.Email,
+            PasswordHash = _passwordService.HashPassword(request.Password),
+            Role = request.Role,
+            CreatedAt = DateTime.UtcNow,
 
-            };
-            // user creation
-            await _unitOfWork.Users.AddAsync(user, cancellationToken);
-            // token generation
-            accessToken = _tokenService.GenerateAccessToken(user);
-            refreshToken = _tokenService.GenerateRefreshToken();
-            string refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+        };
+        // user creation
+        await _unitOfWork.Users.AddAsync(user, cancellationToken);
+        // token generation
+        accessToken = _tokenService.GenerateAccessToken(user);
+        refreshToken = _tokenService.GenerateRefreshToken();
+        string refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
 
-            // refresh Token save operation
-            Result<string> refreshTokenSave = await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
-            if (!string.IsNullOrEmpty(refreshTokenSave.ErrorMessage))
+        // refresh Token save operation
+        Result<string> refreshTokenSave = await _tokenService.SaveRefreshTokenAsync(user.UserId, refreshTokenHash, cancellationToken);
+        if (!string.IsNullOrEmpty(refreshTokenSave.ErrorMessage))
+        {
+
+            return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+        }
+        await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        var authResponse = new AuthResponseDTO<UserDTO>
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+            User = new UserDTO
             {
-                
-                return Result<AuthResponseDTO<UserDTO>>.Failure("REFRESH_TOKEN_SAVE_FAILED");
+                Id = user.UserId,
+                Email = user.Email,
+                Role = user.Role,
             }
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-            var authResponse = new AuthResponseDTO<UserDTO>
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
-                User = new UserDTO
-                {
-                    Id = user.UserId,
-                    Email = user.Email,
-                    Role = user.Role,
-                }
-            };
-            return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
+        };
+        return Result<AuthResponseDTO<UserDTO>>.Success(authResponse);
         // }
         // catch (Exception)
         // {
@@ -179,7 +179,7 @@ public class AuthService : IAuthService
 
     }
 
-    public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
+    public async Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(string code, GoogleUserInfo googleuUserObject, CancellationToken cancellationToken)
     {
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -189,7 +189,7 @@ public class AuthService : IAuthService
             {
                 return Result<AuthResponseDTO<GoogleUserInfo>>.Failure("USER_ALREADY_EXISTS");
             }
-            string tempAccessToken = _tokenService.GenerateTemporaryAccessToken(googleuUserObject);
+            string tempAccessToken = _tokenService.GenerateTemporaryAccessToken(code, googleuUserObject);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             var authResponse = new AuthResponseDTO<GoogleUserInfo>
             {
@@ -207,28 +207,42 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(CompleteGoogleSignUpRequestDTO googleUserObject, string temporaryAccessToken, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRole userRole, string temporaryAccessToken, CancellationToken cancellationToken = default)
     {
         // Validate temporary access token from cookie
-        Result<GoogleUserInfo> tokenValidationResult = _tokenService.ValidateTemporaryAccessToken(temporaryAccessToken);
-        if (!tokenValidationResult.IsSuccess || tokenValidationResult.Data == null)
+        CompleteGoogleSignUpRequestDTO tokenData = null;
+        try
         {
-            return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_TEMPORARY_TOKEN");
+            Result<CompleteGoogleSignUpRequestDTO> tokenValidationResult = _tokenService.ValidateTemporaryAccessToken(temporaryAccessToken);
+            if (!tokenValidationResult.IsSuccess || tokenValidationResult.Data == null)
+            {
+                return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_TEMPORARY_TOKEN");
+            }
+            tokenData = tokenValidationResult.Data;
+            GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(tokenData.Code, cancellationToken);
+            if (googleUserObject == null)
+            {
+                return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_GOOGLE_USER_INFO");
+            }
+            User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+            if (existingUser != null)
+            {
+                return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
+            }
+        }
+        catch (Exception ex)
+        {
+            return Result<AuthResponseDTO<UserDTO>>.Failure(errorMessage: ex.Message);
         }
 
-        var tokenData = tokenValidationResult.Data;
-        
         // Ensure the GoogleUserId and email from request match the token
-        if (tokenData.GoogleUserId != googleUserObject.GoogleUserId || tokenData.UserEmail != googleUserObject.UserEmail)
-        {
-            return Result<AuthResponseDTO<UserDTO>>.Failure("TOKEN_MISMATCH");
-        }
+
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            User? findUserByEmail = await _unitOfWork.Users.GetByEmailAsync(googleUserObject.UserEmail, cancellationToken);
-            User? findUserByGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+            User? findUserByEmail = await _unitOfWork.Users.GetByEmailAsync(tokenData.UserEmail, cancellationToken);
+            User? findUserByGoogleID = await _googleOAuthService.GetUserByGoogleIDAsync(tokenData.GoogleUserId, cancellationToken);
             if (findUserByEmail != null || findUserByGoogleID != null)
             {
                 return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
@@ -237,9 +251,9 @@ public class AuthService : IAuthService
             User newUser = new User
             {
                 UserId = Guid.NewGuid(),
-                FullName = googleUserObject.UserName,
-                Email = googleUserObject.UserEmail,
-                Role = googleUserObject.Role,
+                FullName = tokenData.UserName,
+                Email = tokenData.UserEmail,
+                Role = userRole,
                 CreatedAt = DateTime.UtcNow,
                 LastLogin = DateTime.UtcNow,
             };
@@ -247,18 +261,18 @@ public class AuthService : IAuthService
             UserLogin newUserLogin = new UserLogin
             {
                 UserId = newUser.UserId,
-                Providerkey = googleUserObject.GoogleUserId,
+                Providerkey = tokenData.GoogleUserId,
                 Providerdisplayname = "google",
                 Loginprovider = "google"
             };
             await _unitOfWork.UserExternalLoginRepository.AddAsync(newUserLogin);
             string accessToken, refreshToken, refreshTokenHash;
-            accessToken =  _tokenService.GenerateAccessToken(newUser);
+            accessToken = _tokenService.GenerateAccessToken(newUser);
             refreshToken = _tokenService.GenerateRefreshToken();
             refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
             Result<string> saveRefreshToken = await _tokenService.SaveRefreshTokenAsync(newUser.UserId, refreshTokenHash, cancellationToken);
             await _unitOfWork.CommitTransactionAsync();
-            
+
             var authResponse = new AuthResponseDTO<UserDTO>
             {
                 AccessToken = accessToken,

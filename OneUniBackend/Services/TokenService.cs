@@ -55,7 +55,7 @@ public class TokenService : ITokenService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
-    public string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo)
+    public string GenerateTemporaryAccessToken(string code, GoogleUserInfo googleUserInfo)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var secret = _jwtSettings.SecretKey;
@@ -66,7 +66,8 @@ public class TokenService : ITokenService
         var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, googleUserInfo.GoogleUserId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, code),
+            new Claim(ClaimTypes.Name, googleUserInfo.GoogleUserId.ToString()),
             new Claim(ClaimTypes.Email, googleUserInfo.UserEmail),
             new Claim(ClaimTypes.Role, googleUserInfo.UserName)
         };
@@ -170,49 +171,51 @@ public class TokenService : ITokenService
         }
     }
 
-    public Result<GoogleUserInfo> ValidateTemporaryAccessToken(string token)
+    public Result<CompleteGoogleSignUpRequestDTO> ValidateTemporaryAccessToken(string token)
     {
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var secret = _jwtSettings.SecretKey;
             if (string.IsNullOrEmpty(secret))
-                return Result<GoogleUserInfo>.Failure("JWT_SECRET_KEY_NOT_CONFIGURED");
+                return Result<CompleteGoogleSignUpRequestDTO>.Failure("JWT_SECRET_KEY_NOT_CONFIGURED");
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var validationParameters = _validationParameters.Clone();
             validationParameters.ValidateLifetime = true;
             var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
 
-            var googleUserIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var code = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var emailClaim = principal.FindFirst(ClaimTypes.Email)?.Value;
-            var userNameClaim = principal.FindFirst(ClaimTypes.Role)?.Value; // Note: Using Role claim for UserName in temporary token
+            var userNameClaim = principal.FindFirst(ClaimTypes.Role)?.Value;
+            var GoogleUserIdClaim = principal.FindFirst(ClaimTypes.Name)?.Value; // Note: Using Role claim for UserName in temporary token
 
-            if (string.IsNullOrEmpty(googleUserIdClaim) || string.IsNullOrEmpty(emailClaim))
+            if (string.IsNullOrEmpty(GoogleUserIdClaim) || string.IsNullOrEmpty(emailClaim))
             {
-                return Result<GoogleUserInfo>.Failure("INVALID_TOKEN_CLAIMS");
+                return Result<CompleteGoogleSignUpRequestDTO>.Failure("INVALID_TOKEN_CLAIMS");
             }
 
-            var googleUserInfo = new GoogleUserInfo
+            var completeGoogleUserInfo = new CompleteGoogleSignUpRequestDTO
             {
-                GoogleUserId = googleUserIdClaim,
+                GoogleUserId = GoogleUserIdClaim,
                 UserEmail = emailClaim,
-                UserName = userNameClaim ?? string.Empty
+                UserName = userNameClaim ?? string.Empty,
+                Code = code,
             };
 
-            return Result<GoogleUserInfo>.Success(googleUserInfo);
+            return Result<CompleteGoogleSignUpRequestDTO>.Success(completeGoogleUserInfo);
         }
         catch (SecurityTokenExpiredException)
         {
-            return Result<GoogleUserInfo>.Failure("TOKEN_EXPIRED");
+            return Result<CompleteGoogleSignUpRequestDTO>.Failure("TOKEN_EXPIRED");
         }
         catch (SecurityTokenInvalidSignatureException)
         {
-            return Result<GoogleUserInfo>.Failure("INVALID_TOKEN_SIGNATURE");
+            return Result<CompleteGoogleSignUpRequestDTO>.Failure("INVALID_TOKEN_SIGNATURE");
         }
         catch (Exception)
         {
-            return Result<GoogleUserInfo>.Failure("TOKEN_VALIDATION_FAILED");
+            return Result<CompleteGoogleSignUpRequestDTO>.Failure("TOKEN_VALIDATION_FAILED");
         }
     }
 }

@@ -10,6 +10,7 @@ using OneUniBackend.Common;
 using OneUniBackend.Entities;
 using OneUniBackend.Services;
 using OneUniBackend.DTOs.User;
+using Microsoft.Extensions.Configuration;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -21,14 +22,16 @@ namespace OneUniBackend.Controllers.Auth
         private readonly ILogger<GoogleOAuth> _logger;
         private readonly IAuthService _authService;
         private readonly ICookieService _cookieService;
+        private readonly IConfiguration _configuration;
 
-        public GoogleOAuth(ICookieService cookieService, IGoogleOAuthService googleOAuthService, IOptions<JWTSettings> jwtSettings, IAuthService authService, ILogger<GoogleOAuth> logger)
+        public GoogleOAuth(ICookieService cookieService, IGoogleOAuthService googleOAuthService, IOptions<JWTSettings> jwtSettings, IAuthService authService, ILogger<GoogleOAuth> logger, IConfiguration configuration)
         {
             _googleOAuthService = googleOAuthService;
             _jwtSettings = jwtSettings.Value;
             _authService = authService;
             _logger = logger;
             _cookieService = cookieService;
+            _configuration = configuration;
         }
         [HttpGet("callback")]
         [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status200OK)]
@@ -97,7 +100,7 @@ namespace OneUniBackend.Controllers.Auth
                 // Temporary signup flow
                 else if (existingUser == null)
                 {
-                    Result<AuthResponseDTO<GoogleUserInfo>> Result = await _authService.TempGoogleSignUpAsync(googleUserObject, cancellationToken);
+                    Result<AuthResponseDTO<GoogleUserInfo>> Result = await _authService.TempGoogleSignUpAsync(code, googleUserObject, cancellationToken);
                     if (!Result.IsSuccess)
                     {
                         _logger.LogWarning("Temporary signup failed for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
@@ -119,11 +122,13 @@ namespace OneUniBackend.Controllers.Auth
                     }
                     _cookieService.SetAuthCookies(Result.Data!.AccessToken, null);
                     _logger.LogInformation("Temporary Google signup successful for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
-                    return StatusCode(StatusCodes.Status307TemporaryRedirect, new
-                    {
-                        expiresAt = Result.Data.ExpiresAt,
-                        user = Result.Data.User
-                    });
+                    
+                    // Redirect to frontend signup completion page
+                    // Read frontend URL from configuration, or use a default
+                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
+                    var redirectUrl = $"{frontendUrl}/complete-signup";
+                    
+                    return Redirect(frontendUrl);
                 }
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
@@ -141,12 +146,8 @@ namespace OneUniBackend.Controllers.Auth
                         HttpContext.TraceIdentifier));
             }
         }
-        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(AuthResponseDTO<UserDTO>), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status409Conflict)]
-        [ProducesResponseType(typeof(ErrorResponseDTO), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CompleteGoogleSignUp([FromBody] CompleteGoogleSignUpRequestDTO googleSignUpRequest, CancellationToken cancellationToken)
+        [HttpPost("complete-signup")]
+                public async Task<IActionResult> CompleteGoogleSignUp([FromBody] CompleteGoogleSignUpRequestDTO googleSignUpRequest, CancellationToken cancellationToken)
         {
             try
             {
@@ -158,16 +159,6 @@ namespace OneUniBackend.Controllers.Auth
                         .ToList();
                     return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
                 }
-                GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(googleSignUpRequest.GoogleUserId, cancellationToken);
-                if (googleUserObject == null)
-                {
-                    return StatusCode(
-                                    StatusCodes.Status400BadRequest,
-                                    ErrorResponseDTO.FromMessage(
-                                        "Invalid Google OAuth code.",
-                                        HttpContext.TraceIdentifier));
-                }
-                // Read temporary access token from cookie BEFORE clearing it
                 var temporaryAccessToken = Request.Cookies["access_token"];
                 if (string.IsNullOrEmpty(temporaryAccessToken))
                 {
@@ -175,14 +166,11 @@ namespace OneUniBackend.Controllers.Auth
                         "Temporary access token not found. Please start the signup process again.",
                         HttpContext.TraceIdentifier));
                 }
+              
+                // Read temporary access token from cookie BEFORE clearing it
 
                 // Check if User with Google ID already exists
-                User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
-                if (existingUser != null)
-                {
-                    _cookieService.ClearAuthCookies();
-                    return StatusCode(StatusCodes.Status409Conflict, ErrorResponseDTO.FromMessage("User with similar credentials exists.", HttpContext.TraceIdentifier));
-                }
+                
                 
                 Result<AuthResponseDTO<UserDTO>> Result = await _authService.CompleteGoogleSignupAsync(googleSignUpRequest, temporaryAccessToken, cancellationToken);
                 
@@ -190,12 +178,15 @@ namespace OneUniBackend.Controllers.Auth
                 {
                     // Clear temporary cookie on failure
                     _cookieService.ClearAuthCookies();
-                    _logger.LogWarning("Google signup completion failed for email: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
+                    _logger.LogWarning("Google signup completion failed for email: {Google User ID}", Result.Data);
 
                     return Result.ErrorMessage switch
                     {
                         "INVALID_TEMPORARY_TOKEN" or "TOKEN_EXPIRED" => Unauthorized(ErrorResponseDTO.FromMessage(
                             "Invalid or expired temporary token. Please start the signup process again.",
+                            HttpContext.TraceIdentifier)),
+                        "INVALID_GOOGLE_USER_INFO" => BadRequest(ErrorResponseDTO.FromMessage(
+                            "Google user information mismatch.",
                             HttpContext.TraceIdentifier)),
                         "TOKEN_MISMATCH" => Unauthorized(ErrorResponseDTO.FromMessage(
                             "Token mismatch. Please start the signup process again.",

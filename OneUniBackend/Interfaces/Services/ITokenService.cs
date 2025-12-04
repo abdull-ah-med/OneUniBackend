@@ -13,9 +13,9 @@ public interface ITokenService
     Task<Result> RevokeAllRefreshTokensForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result> RevokeRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default);
     Task RemoveExpiredRefreshTokensAsync(CancellationToken cancellationToken = default);
-    string GenerateTemporaryAccessToken(GoogleUserInfo googleUserInfo);
+    string GenerateTemporaryAccessToken(string code, GoogleUserInfo googleUserInfo);
     string HashRefreshToken(string refreshToken);
-    Result<GoogleUserInfo> ValidateTemporaryAccessToken(string token);
+    Result<CompleteGoogleSignUpRequestDTO> ValidateTemporaryAccessToken(string token);
 
 }
 

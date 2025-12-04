@@ -371,6 +371,10 @@ public partial class OneUniDbContext : DbContext
             entity.HasKey(e => new { e.Loginprovider, e.Providerkey }).HasName("pk_user_logins");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserLogins).HasConstraintName("fk_user_logins_users_userid");
+            entity.HasOne(d => d.User)
+          .WithMany(p => p.UserLogins)
+          .HasForeignKey(d => d.UserId)                 // Explicit FK mapping
+          .HasConstraintName("fk_user_logins_users_userid");
         });
 
         modelBuilder.Entity<UserRefreshToken>(entity =>

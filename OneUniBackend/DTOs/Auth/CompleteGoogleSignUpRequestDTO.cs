@@ -4,14 +4,14 @@ using OneUniBackend.Enums;
 
 namespace OneUniBackend.DTOs.Auth;
 
-public record CompleteGoogleSignUpRequestDTO
-(
+public class CompleteGoogleSignUpRequestDTO
+{
     [Required]
-    string GoogleUserId,
+    public string GoogleUserId { get; set; }
     [Required]
-    string UserName,
+    public string UserName { get; set; } = "";
     [Required]
-     string UserEmail,
+    public string UserEmail { get; set; } = ""; 
     [Required]
-    UserRole Role
-);
+    public string Code { get; set; } = "";
+}   

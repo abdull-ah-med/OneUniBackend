@@ -18,6 +18,6 @@ public interface IAuthService
     Task<Result> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
     Task<Result<AuthResponseDTO<UserDTO>>> GoogleLoginAsync(GoogleUserInfo googleuserObject, CancellationToken cancellationToken);
     Task<Result<AuthResponseDTO<GoogleUserInfo>>> TempGoogleSignUpAsync(string code, GoogleUserInfo googleUserObject, CancellationToken cancellationToken);
-    Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRole userRole, string temporaryAccessToken, CancellationToken cancellationToken = default);    
+    Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRoleDTO userRole, string temporaryAccessToken, CancellationToken cancellationToken = default);    
 }
 

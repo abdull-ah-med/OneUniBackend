@@ -10,21 +10,26 @@ public class CookieService : ICookieService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly JWTSettings _jwtSettings;
+    private readonly IWebHostEnvironment _environment;
 
-    public CookieService(IHttpContextAccessor httpContextAccessor, IOptions<JWTSettings> jwtSettings)
+    public CookieService(IHttpContextAccessor httpContextAccessor, IOptions<JWTSettings> jwtSettings, IWebHostEnvironment environment)
     {
         _httpContextAccessor = httpContextAccessor;
         _jwtSettings = jwtSettings.Value;
+        _environment = environment;
     }
+    
     public void SetAuthCookies(string accessToken, string? refreshToken)
     {
         var response = _httpContextAccessor.HttpContext!.Response;
+        var isProduction = _environment.IsProduction();
+        
         response.Cookies.Append("access_token", accessToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api",
+            Secure = isProduction,
+            SameSite = SameSiteMode.Lax,  // Lax allows cookies on redirects
+            Path = "/",
             Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes)
         });
 
@@ -32,30 +37,33 @@ public class CookieService : ICookieService
         {
             response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
             {
-                SameSite = SameSiteMode.Strict,
                 HttpOnly = true,
-                Secure = true,
-                Path = "/api/auth/refresh",
+                Secure = isProduction,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
                 Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
         }
     }
+    
     public void ClearAuthCookies()
     {
         var response = _httpContextAccessor.HttpContext!.Response;
+        var isProduction = _environment.IsProduction();
+        
         response.Cookies.Delete("access_token", new CookieOptions
         {
-            Path = "/api",
-            SameSite = SameSiteMode.Strict,
+            Path = "/",
+            SameSite = SameSiteMode.Lax,
             HttpOnly = true,
-            Secure = true
+            Secure = isProduction
         });
         response.Cookies.Delete("refresh_token", new CookieOptions
         {
-            Path = "/api/auth/refresh",
-            SameSite = SameSiteMode.Strict,
+            Path = "/",
+            SameSite = SameSiteMode.Lax,
             HttpOnly = true,
-            Secure = true
+            Secure = isProduction
         });
     }
 }

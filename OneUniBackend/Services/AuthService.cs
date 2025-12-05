@@ -207,7 +207,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRole userRole, string temporaryAccessToken, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthResponseDTO<UserDTO>>> CompleteGoogleSignupAsync(UserRoleDTO userRole, string temporaryAccessToken, CancellationToken cancellationToken = default)
     {
         // Validate temporary access token from cookie
         CompleteGoogleSignUpRequestDTO tokenData = null;
@@ -219,12 +219,12 @@ public class AuthService : IAuthService
                 return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_TEMPORARY_TOKEN");
             }
             tokenData = tokenValidationResult.Data;
-            GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(tokenData.Code, cancellationToken);
-            if (googleUserObject == null)
-            {
-                return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_GOOGLE_USER_INFO");
-            }
-            User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
+            // GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(tokenData.Code, cancellationToken);
+            // if (googleUserObject == null)
+            // {
+            //     return Result<AuthResponseDTO<UserDTO>>.Failure("INVALID_GOOGLE_USER_INFO");
+            // }
+            User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(tokenData.GoogleUserId, cancellationToken);
             if (existingUser != null)
             {
                 return Result<AuthResponseDTO<UserDTO>>.Failure("USER_ALREADY_EXISTS");
@@ -253,9 +253,10 @@ public class AuthService : IAuthService
                 UserId = Guid.NewGuid(),
                 FullName = tokenData.UserName,
                 Email = tokenData.UserEmail,
-                Role = userRole,
+                Role = userRole.Role,
                 CreatedAt = DateTime.UtcNow,
                 LastLogin = DateTime.UtcNow,
+                IsVerified = tokenData.IsEmailVerified
             };
             await _unitOfWork.Users.AddAsync(newUser);
             UserLogin newUserLogin = new UserLogin

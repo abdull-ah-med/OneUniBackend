@@ -7,6 +7,7 @@ using OneUniBackend.DTOs.Auth;
 using OneUniBackend.Entities;
 using OneUniBackend.Interfaces.Repositories;
 using OneUniBackend.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 
 namespace OneUniBackend.Services;
 
@@ -17,9 +18,11 @@ public class GoogleOAuthService : IGoogleOAuthService
     private readonly string _clientId;
     private readonly string _redirectURI;
     private readonly GoogleAuthorizationCodeFlow _flow;
-    public GoogleOAuthService(IConfiguration config, IUnitOfWork unitOfWork)
+    private readonly ILogger<GoogleOAuthService> _logger;
+    public GoogleOAuthService(IConfiguration config, IUnitOfWork unitOfWork, ILogger<GoogleOAuthService> logger)
     {
         _unitOfWork = unitOfWork;
+        _logger = logger;
         _clientId = config["GoogleAuth:ClientId"] ?? throw new ArgumentNullException("GoogleAuth:ClientId");
         _clientSecret = config["GoogleAuth:ClientSecret"] ?? throw new ArgumentNullException("GoogleAuth:ClientSecret");
         _redirectURI = config["GoogleAuth:RedirectUri"] ?? throw new ArgumentNullException("GoogleAuth:RedirectUri");
@@ -32,6 +35,7 @@ public class GoogleOAuthService : IGoogleOAuthService
             },
             Scopes = new[] { "openid", "email", "profile" }
         });
+        _logger.LogInformation("GoogleOAuthService initialized with RedirectUri: {RedirectUri}", _redirectURI);
     }
 
     public async Task<User?> GetUserByGoogleIDAsync(string googleID, CancellationToken cancellationToken = default)
@@ -39,7 +43,7 @@ public class GoogleOAuthService : IGoogleOAuthService
         try
         {
             var user = await _unitOfWork.UserExternalLoginRepository
-                .FindUserByProviderAndKeyAsync("Google", googleID, cancellationToken);
+                .FindUserByProviderAndKeyAsync("google", googleID, cancellationToken);
             return user;
         }
         catch (Exception ex)
@@ -65,7 +69,7 @@ public class GoogleOAuthService : IGoogleOAuthService
             return true;
 
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             return false;
@@ -79,9 +83,11 @@ public class GoogleOAuthService : IGoogleOAuthService
             var validPayload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken, new GoogleJsonWebSignature.ValidationSettings
             {
                 Audience = new[] {_clientId}
-         });
-         if (validPayload != null)
+            });
+            
+            if (validPayload != null)
             {
+                _logger.LogInformation("Successfully exchanged code for user info. Google User ID: {GoogleUserId}", validPayload.Subject);
                 return new GoogleUserInfo
                 {
                     GoogleUserId = validPayload.Subject,

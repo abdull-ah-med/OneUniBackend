@@ -11,6 +11,7 @@ using OneUniBackend.Entities;
 using OneUniBackend.Services;
 using OneUniBackend.DTOs.User;
 using Microsoft.Extensions.Configuration;
+using OneUniBackend.Enums;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -87,15 +88,11 @@ namespace OneUniBackend.Controllers.Auth
                         };
                     }
                     _cookieService.SetAuthCookies(Result.Data!.AccessToken, Result.Data!.RefreshToken);
-                    _logger.LogInformation("Token refreshed successfully");
+                    _logger.LogInformation("Google login successful for: {Email}", googleUserObject.UserEmail);
 
-                    // Return response without tokens (they're in cookies)
-                    return Ok(new
-                    {
-                        expiresAt = Result.Data.ExpiresAt,
-                        user = Result.Data.User
-                    });
-
+                    // Redirect to frontend login callback
+                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
+                    return Redirect($"{frontendUrl}/login/callback");
                 }
                 // Temporary signup flow
                 else if (existingUser == null)
@@ -124,11 +121,8 @@ namespace OneUniBackend.Controllers.Auth
                     _logger.LogInformation("Temporary Google signup successful for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
                     
                     // Redirect to frontend signup completion page
-                    // Read frontend URL from configuration, or use a default
                     var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
-                    var redirectUrl = $"{frontendUrl}/complete-signup";
-                    
-                    return Redirect(frontendUrl);
+                    return Redirect($"{frontendUrl}/signup/callback");
                 }
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
@@ -147,7 +141,7 @@ namespace OneUniBackend.Controllers.Auth
             }
         }
         [HttpPost("complete-signup")]
-                public async Task<IActionResult> CompleteGoogleSignUp([FromBody] CompleteGoogleSignUpRequestDTO googleSignUpRequest, CancellationToken cancellationToken)
+                public async Task<IActionResult> CompleteGoogleSignUp([FromBody] UserRoleDTO userRole, CancellationToken cancellationToken)
         {
             try
             {
@@ -171,8 +165,8 @@ namespace OneUniBackend.Controllers.Auth
 
                 // Check if User with Google ID already exists
                 
-                
-                Result<AuthResponseDTO<UserDTO>> Result = await _authService.CompleteGoogleSignupAsync(googleSignUpRequest, temporaryAccessToken, cancellationToken);
+                    
+                Result<AuthResponseDTO<UserDTO>> Result = await _authService.CompleteGoogleSignupAsync(userRole, temporaryAccessToken, cancellationToken);
                 
                 if (!Result.IsSuccess)
                 {
@@ -211,7 +205,7 @@ namespace OneUniBackend.Controllers.Auth
                 _logger.LogInformation("User registered successfully: {Email}", Result.Data.User!.Email);
 
                 // Return response without tokens (they're in cookies)
-                return CreatedAtAction(nameof(Result.Data.User), new { }, new
+                return StatusCode(StatusCodes.Status201Created, new
                 {
                     expiresAt = Result.Data.ExpiresAt,
                     user = Result.Data.User

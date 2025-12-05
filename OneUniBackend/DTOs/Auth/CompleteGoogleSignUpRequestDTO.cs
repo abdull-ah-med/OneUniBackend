@@ -14,4 +14,5 @@ public class CompleteGoogleSignUpRequestDTO
     public string UserEmail { get; set; } = ""; 
     [Required]
     public string Code { get; set; } = "";
+    public bool IsEmailVerified { get; set; }
 }   

@@ -8,7 +8,7 @@ namespace OneUniBackend.Entities;
 
 [PrimaryKey("Loginprovider", "Providerkey")]
 [Table("user_logins")]
-[Index("Userid", Name = "ix_user_logins_userid")]
+[Index("UserId", Name = "ix_user_logins_userid")]
 public partial class UserLogin
 {
     [Column("loginprovider")]
@@ -25,7 +25,7 @@ public partial class UserLogin
     [Column("userid")]
     public Guid UserId { get; set; }
 
-    [ForeignKey("Userid")]
+    [ForeignKey("UserId")]
     [InverseProperty("UserLogins")]
     public virtual User User { get; set; } = null!;
 }

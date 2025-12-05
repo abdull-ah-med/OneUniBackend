@@ -64,12 +64,14 @@ public class TokenService : ITokenService
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, code),
             new Claim(ClaimTypes.Name, googleUserInfo.GoogleUserId.ToString()),
             new Claim(ClaimTypes.Email, googleUserInfo.UserEmail),
-            new Claim(ClaimTypes.Role, googleUserInfo.UserName)
+            new Claim(ClaimTypes.Role, googleUserInfo.UserName),
+            new Claim("isEmailVerified", googleUserInfo.isEmailVerified.ToString()) 
         };
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -189,6 +191,8 @@ public class TokenService : ITokenService
             var emailClaim = principal.FindFirst(ClaimTypes.Email)?.Value;
             var userNameClaim = principal.FindFirst(ClaimTypes.Role)?.Value;
             var GoogleUserIdClaim = principal.FindFirst(ClaimTypes.Name)?.Value; // Note: Using Role claim for UserName in temporary token
+            var isEmailVerified = bool.Parse(principal.FindFirst("isEmailVerified")!.Value);
+
 
             if (string.IsNullOrEmpty(GoogleUserIdClaim) || string.IsNullOrEmpty(emailClaim))
             {
@@ -201,6 +205,7 @@ public class TokenService : ITokenService
                 UserEmail = emailClaim,
                 UserName = userNameClaim ?? string.Empty,
                 Code = code,
+                IsEmailVerified = isEmailVerified
             };
 
             return Result<CompleteGoogleSignUpRequestDTO>.Success(completeGoogleUserInfo);

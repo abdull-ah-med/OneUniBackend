@@ -12,6 +12,10 @@ using OneUniBackend.Services;
 using OneUniBackend.DTOs.User;
 using Microsoft.Extensions.Configuration;
 using OneUniBackend.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Net.Http.Headers;
 namespace OneUniBackend.Controllers.Auth
 {
     [Route("api/google-oauth")]
@@ -24,6 +28,12 @@ namespace OneUniBackend.Controllers.Auth
         private readonly IAuthService _authService;
         private readonly ICookieService _cookieService;
         private readonly IConfiguration _configuration;
+        private static readonly HashSet<string> AllowedFrontendPaths = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "/login/callback",
+            "/signup/callback",
+            "/auth/error"
+        };
 
         public GoogleOAuth(ICookieService cookieService, IGoogleOAuthService googleOAuthService, IOptions<JWTSettings> jwtSettings, IAuthService authService, ILogger<GoogleOAuth> logger, IConfiguration configuration)
         {
@@ -51,16 +61,16 @@ namespace OneUniBackend.Controllers.Auth
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToList();
-                    return BadRequest(ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier));
+                    return RespondError(StatusCodes.Status400BadRequest, ErrorResponseDTO.FromErrors(errors, HttpContext.TraceIdentifier), "invalid_request");
                 }
                 GoogleUserInfo? googleUserObject = await _googleOAuthService.ExchangeCodeforUserInfoAsync(code, cancellationToken);
                 if (googleUserObject == null)
                 {
-                    return StatusCode(
-                                    StatusCodes.Status400BadRequest,
-                                    ErrorResponseDTO.FromMessage(
-                                        "Invalid Google OAuth code.",
-                                        HttpContext.TraceIdentifier));
+                    return RespondError(StatusCodes.Status400BadRequest,
+                        ErrorResponseDTO.FromMessage(
+                            "Invalid Google OAuth code.",
+                            HttpContext.TraceIdentifier),
+                        "invalid_code");
                 }
                 // Check if User with Google ID already exists
                 User? existingUser = await _googleOAuthService.GetUserByGoogleIDAsync(googleUserObject.GoogleUserId, cancellationToken);
@@ -74,25 +84,30 @@ namespace OneUniBackend.Controllers.Auth
 
                         return Result.ErrorMessage switch
                         {
-                            "INVALID_SIGNUP_REQUEST" => Unauthorized(ErrorResponseDTO.FromMessage(
-                                "Invalid credentials.",
-                                HttpContext.TraceIdentifier)),
-                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => StatusCode(
+                            "INVALID_SIGNUP_REQUEST" => RespondError(
+                                StatusCodes.Status400BadRequest,
+                                ErrorResponseDTO.FromMessage(
+                                    "Invalid credentials.",
+                                    HttpContext.TraceIdentifier),
+                                "invalid_credentials"),
+                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => RespondError(
                                 StatusCodes.Status500InternalServerError,
                                 ErrorResponseDTO.FromMessage(
                                     "Authentication failed. Please try again later.",
-                                    HttpContext.TraceIdentifier)),
-                            _ => BadRequest(ErrorResponseDTO.FromMessage(
-                                Result.ErrorMessage ?? "Google SignUp failed.",
-                                HttpContext.TraceIdentifier))
+                                    HttpContext.TraceIdentifier),
+                                "auth_failed"),
+                            _ => RespondError(
+                                StatusCodes.Status400BadRequest,
+                                ErrorResponseDTO.FromMessage(
+                                    Result.ErrorMessage ?? "Google SignUp failed.",
+                                    HttpContext.TraceIdentifier),
+                                "google_login_failed")
                         };
                     }
                     _cookieService.SetAuthCookies(Result.Data!.AccessToken, Result.Data!.RefreshToken);
                     _logger.LogInformation("Google login successful for: {Email}", googleUserObject.UserEmail);
 
-                    // Redirect to frontend login callback
-                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
-                    return Redirect($"{frontendUrl}/login/callback");
+                    return RedirectToFrontend("/login/callback");
                 }
                 // Temporary signup flow
                 else if (existingUser == null)
@@ -104,40 +119,47 @@ namespace OneUniBackend.Controllers.Auth
 
                         return Result.ErrorMessage switch
                         {
-                            "USER_ALREADY_EXISTS" => Unauthorized(ErrorResponseDTO.FromMessage(
-                                "User with matching credentials already exists.",
-                                HttpContext.TraceIdentifier)),
-                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => StatusCode(
+                            "USER_ALREADY_EXISTS" => RespondError(
+                                StatusCodes.Status409Conflict,
+                                ErrorResponseDTO.FromMessage(
+                                    "User with matching credentials already exists.",
+                                    HttpContext.TraceIdentifier),
+                                "user_exists"),
+                            "TOKEN_GENERATION_FAILED" or "REFRESH_TOKEN_SAVE_FAILED" => RespondError(
                                 StatusCodes.Status500InternalServerError,
                                 ErrorResponseDTO.FromMessage(
                                     "Authentication failed. Please try again later.",
-                                    HttpContext.TraceIdentifier)),
-                            _ => BadRequest(ErrorResponseDTO.FromMessage(
-                                Result.ErrorMessage ?? "Google Signin failed.",
-                                HttpContext.TraceIdentifier))
+                                    HttpContext.TraceIdentifier),
+                                "auth_failed"),
+                            _ => RespondError(
+                                StatusCodes.Status400BadRequest,
+                                ErrorResponseDTO.FromMessage(
+                                    Result.ErrorMessage ?? "Google Signin failed.",
+                                    HttpContext.TraceIdentifier),
+                                "google_signup_failed")
                         };
                     }
                     _cookieService.SetAuthCookies(Result.Data!.AccessToken, null);
                     _logger.LogInformation("Temporary Google signup successful for Google User ID: {Google User ID}, {Email}", googleUserObject.GoogleUserId, googleUserObject.UserEmail);
                     
-                    // Redirect to frontend signup completion page
-                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
-                    return Redirect($"{frontendUrl}/signup/callback");
+                    return RedirectToFrontend("/signup/callback");
                 }
-                return StatusCode(
+                return RespondError(
                     StatusCodes.Status500InternalServerError,
                     ErrorResponseDTO.FromMessage(
                         "An unexpected error occurred. Please try again later.",
-                        HttpContext.TraceIdentifier));
+                        HttpContext.TraceIdentifier),
+                    "server_error");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during Google OAuth callback. TraceId: {TraceId}", HttpContext.TraceIdentifier);
-                return StatusCode(
+                return RespondError(
                     StatusCodes.Status500InternalServerError,
                     ErrorResponseDTO.FromMessage(
                         "An unexpected error occurred. Please try again later.",
-                        HttpContext.TraceIdentifier));
+                        HttpContext.TraceIdentifier),
+                    "server_error");
             }
         }
         [HttpPost("complete-signup")]
@@ -220,6 +242,47 @@ namespace OneUniBackend.Controllers.Auth
                         "An unexpected error occurred. Please try again later.",
                         HttpContext.TraceIdentifier));
             }
+        }
+
+        private IActionResult RedirectToFrontend(string path, string? errorCode = null, int statusCode = StatusCodes.Status303SeeOther)
+        {
+            var targetPath = AllowedFrontendPaths.Contains(path) ? path : "/auth/error";
+            var configuredBase = _configuration["FrontendUrl"];
+            if (!Uri.TryCreate(configuredBase, UriKind.Absolute, out var baseUri))
+            {
+                baseUri = new Uri("http://localhost:3000");
+            }
+
+            var uriBuilder = new UriBuilder(baseUri)
+            {
+                Path = targetPath
+            };
+
+            if (!string.IsNullOrWhiteSpace(errorCode))
+            {
+                uriBuilder.Query = $"error={Uri.EscapeDataString(errorCode)}";
+            }
+
+            Response.StatusCode = statusCode;
+            Response.Headers.Location = uriBuilder.Uri.ToString();
+            return new EmptyResult();
+        }
+
+        private IActionResult RespondError(int statusCode, ErrorResponseDTO payload, string errorCode)
+        {
+            if (PrefersJson())
+            {
+                return StatusCode(statusCode, payload);
+            }
+
+            return RedirectToFrontend("/auth/error", errorCode);
+        }
+
+        private bool PrefersJson()
+        {
+            var acceptHeader = Request.Headers[HeaderNames.Accept];
+            return acceptHeader.Any(value =>
+                value != null && value.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0);
         }
     }
 }

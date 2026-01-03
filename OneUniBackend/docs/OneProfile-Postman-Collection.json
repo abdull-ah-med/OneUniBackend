@@ -1,0 +1,289 @@
+{
+  "info": {
+    "name": "OneProfile API",
+    "description": "OneProfile module endpoints for student profile management with Cloudinary document uploads",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5162",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token from login"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints (prerequisite for profile endpoints)",
+      "item": [
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"Test Student\",\n  \"role\": \"Student\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "OneProfile student profile endpoints",
+      "item": [
+        {
+          "name": "Get Student Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "JWT cookie (auto-set after login)"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Retrieves the authenticated student's complete profile including:\n- Personal information\n- Educational records\n- Documents with download URLs"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"studentProfile\": {\n    \"profileId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"fullName\": \"Ali Khan\",\n    \"dateOfBirth\": \"2005-03-15\",\n    \"gender\": \"Male\",\n    \"cnic\": \"4210112345678\",\n    \"guardianName\": \"Ahmed Khan\",\n    \"fatherName\": \"Ahmed Khan\",\n    \"guardianRelation\": \"Father\",\n    \"guardianPhone\": \"03001234567\",\n    \"city\": \"Karachi\",\n    \"phone\": \"03331234567\"\n  },\n  \"educationalRecords\": [\n    {\n      \"recordId\": \"b2c3d4e5-f6g7-8901-bcde-f23456789012\",\n      \"educationType\": \"Matric\",\n      \"institutionName\": \"City School\",\n      \"boardUniversity\": \"BISE Karachi\",\n      \"totalMarks\": 1100,\n      \"obtainedMarks\": 1045,\n      \"percentage\": 95.00,\n      \"yearOfCompletion\": 2023\n    }\n  ],\n  \"documents\": [\n    {\n      \"documentId\": \"c3d4e5f6-g7h8-9012-cdef-345678901234\",\n      \"documentType\": \"MatricCertificate\",\n      \"fileName\": \"matric-cert.pdf\",\n      \"downloadUrl\": \"https://res.cloudinary.com/your-cloud/raw/upload/oneuni/students/...\",\n      \"verificationStatus\": \"Pending\",\n      \"mimeType\": \"application/pdf\",\n      \"fileSize\": 524288\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upsert Student Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "JWT cookie (auto-set after login)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentProfile\": {\n    \"fullName\": \"Ali Khan\",\n    \"dateOfBirth\": \"2005-03-15\",\n    \"gender\": \"Male\",\n    \"idDocumentType\": \"Cnic\",\n    \"cnic\": \"4210112345678\",\n    \"passportNumber\": null,\n    \"nicopNumber\": null,\n    \"guardianName\": \"Ahmed Khan\",\n    \"fatherName\": \"Ahmed Khan\",\n    \"guardianRelation\": \"Father\",\n    \"guardianPhone\": \"03001234567\",\n    \"guardianCnic\": \"4210198765432\",\n    \"guardianCity\": \"Karachi\",\n    \"guardianAddress\": \"House 123, Block A, Gulshan\",\n    \"city\": \"Karachi\",\n    \"address\": \"Same as guardian\",\n    \"phone\": \"03331234567\",\n    \"profilePictureUrl\": null,\n    \"scholarshipPriority\": true,\n    \"hostelPriority\": false,\n    \"guardianIncome\": 150000.00,\n    \"householdIncome\": 200000.00,\n    \"preferredAdmissionCity\": \"Lahore\",\n    \"isHafizQuran\": false,\n    \"isOrphan\": false,\n    \"disability\": null,\n    \"sports\": {\n      \"type\": \"Cricket\",\n      \"level\": \"Provincial\"\n    }\n  },\n  \"educationalRecords\": [\n    {\n      \"recordId\": null,\n      \"educationType\": \"Matric\",\n      \"institutionName\": \"City School\",\n      \"boardUniversity\": \"BISE Karachi\",\n      \"rollNumber\": \"123456\",\n      \"totalMarks\": 1100,\n      \"obtainedMarks\": 1045,\n      \"percentage\": 95.00,\n      \"grade\": \"A+\",\n      \"yearOfCompletion\": 2023,\n      \"isResultAwaited\": false\n    },\n    {\n      \"recordId\": null,\n      \"educationType\": \"Intermediate\",\n      \"institutionName\": \"DJ Science College\",\n      \"boardUniversity\": \"BISE Karachi\",\n      \"rollNumber\": \"789012\",\n      \"totalMarks\": 1100,\n      \"obtainedMarks\": null,\n      \"percentage\": null,\n      \"grade\": null,\n      \"yearOfCompletion\": null,\n      \"isResultAwaited\": true\n    }\n  ],\n  \"documents\": [\n    {\n      \"documentId\": null,\n      \"educationalRecordId\": null,\n      \"documentType\": \"MatricCertificate\",\n      \"fileName\": \"matric-certificate.pdf\",\n      \"contentType\": \"application/pdf\",\n      \"fileSize\": 524288,\n      \"checksum\": \"sha256-abc123def456...\",\n      \"metadata\": {\n        \"pages\": 2\n      }\n    },\n    {\n      \"documentId\": null,\n      \"educationalRecordId\": null,\n      \"documentType\": \"Cnic\",\n      \"fileName\": \"cnic-front-back.jpg\",\n      \"contentType\": \"image/jpeg\",\n      \"fileSize\": 204800,\n      \"checksum\": null,\n      \"metadata\": null\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Creates or updates the student's complete profile in a single atomic transaction.\n\n**Request includes:**\n- studentProfile: Personal and guardian information\n- educationalRecords: Academic qualifications\n- documents: File upload intents (not actual files)\n\n**Response includes:**\n- profile: Updated profile data with generated IDs\n- uploads: Cloudinary upload parameters for each document\n\n**Frontend must then upload files to Cloudinary using the returned upload parameters.**"
+          },
+          "response": [
+            {
+              "name": "Success Response with Upload URLs",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"profile\": {\n    \"studentProfile\": {\n      \"profileId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"fullName\": \"Ali Khan\",\n      \"dateOfBirth\": \"2005-03-15\",\n      \"gender\": \"Male\",\n      \"cnic\": \"4210112345678\"\n    },\n    \"educationalRecords\": [\n      {\n        \"recordId\": \"b2c3d4e5-f6g7-8901-bcde-f23456789012\",\n        \"educationType\": \"Matric\",\n        \"institutionName\": \"City School\"\n      }\n    ],\n    \"documents\": [\n      {\n        \"documentId\": \"c3d4e5f6-g7h8-9012-cdef-345678901234\",\n        \"documentType\": \"MatricCertificate\",\n        \"fileName\": \"matric-certificate.pdf\",\n        \"downloadUrl\": null,\n        \"verificationStatus\": \"Pending\"\n      }\n    ]\n  },\n  \"uploads\": [\n    {\n      \"documentId\": \"c3d4e5f6-g7h8-9012-cdef-345678901234\",\n      \"documentType\": \"MatricCertificate\",\n      \"educationalRecordId\": null,\n      \"uploadUrl\": \"https://api.cloudinary.com/v1_1/your-cloud-name/raw/upload\",\n      \"signature\": \"abc123def456789...\",\n      \"timestamp\": 1703678400,\n      \"apiKey\": \"123456789012345\",\n      \"cloudName\": \"your-cloud-name\",\n      \"resourceType\": \"raw\",\n      \"publicId\": \"oneuni/students/students/a1b2c3d4/matriccertificate/f6g7h8i9.pdf\",\n      \"objectKey\": \"students/a1b2c3d4/matriccertificate/f6g7h8i9.pdf\",\n      \"folder\": \"oneuni/students\",\n      \"expiresAt\": \"2025-12-27T12:30:00+00:00\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"errors\": [\"The FullName field is required.\"],\n  \"traceId\": \"00-abc123-def456-00\"\n}"
+            },
+            {
+              "name": "Not a Student Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Only students can update their profile.\",\n  \"traceId\": \"00-abc123-def456-00\"\n}"
+            },
+            {
+              "name": "No Basic Profile Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Basic student profile not found for this user.\",\n  \"traceId\": \"00-abc123-def456-00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upsert Profile - Minimal (Profile Only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentProfile\": {\n    \"fullName\": \"Ali Khan\",\n    \"phone\": \"03331234567\"\n  },\n  \"educationalRecords\": [],\n  \"documents\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Minimal update - only update profile fields without records or documents"
+          }
+        },
+        {
+          "name": "Upsert Profile - Update Existing Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentProfile\": {\n    \"fullName\": \"Ali Khan\"\n  },\n  \"educationalRecords\": [\n    {\n      \"recordId\": \"b2c3d4e5-f6g7-8901-bcde-f23456789012\",\n      \"educationType\": \"Matric\",\n      \"institutionName\": \"City School (Updated)\",\n      \"boardUniversity\": \"BISE Karachi\",\n      \"totalMarks\": 1100,\n      \"obtainedMarks\": 1050,\n      \"percentage\": 95.45,\n      \"grade\": \"A+\",\n      \"yearOfCompletion\": 2023,\n      \"isResultAwaited\": false\n    }\n  ],\n  \"documents\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Update an existing educational record by providing its recordId"
+          }
+        },
+        {
+          "name": "Upsert Profile - Link Document to Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentProfile\": {\n    \"fullName\": \"Ali Khan\"\n  },\n  \"educationalRecords\": [],\n  \"documents\": [\n    {\n      \"documentId\": null,\n      \"educationalRecordId\": \"b2c3d4e5-f6g7-8901-bcde-f23456789012\",\n      \"documentType\": \"MatricCertificate\",\n      \"fileName\": \"matric-certificate.pdf\",\n      \"contentType\": \"application/pdf\",\n      \"fileSize\": 524288,\n      \"checksum\": null,\n      \"metadata\": null\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Upload a document linked to a specific educational record by providing educationalRecordId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cloudinary Upload",
+      "description": "Example of how to upload to Cloudinary after receiving upload params",
+      "item": [
+        {
+          "name": "Upload File to Cloudinary",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "The actual file to upload"
+                },
+                {
+                  "key": "public_id",
+                  "value": "oneuni/students/students/userid/matriccertificate/guid.pdf",
+                  "type": "text",
+                  "description": "From uploads[].publicId"
+                },
+                {
+                  "key": "timestamp",
+                  "value": "1703678400",
+                  "type": "text",
+                  "description": "From uploads[].timestamp"
+                },
+                {
+                  "key": "signature",
+                  "value": "abc123def456...",
+                  "type": "text",
+                  "description": "From uploads[].signature"
+                },
+                {
+                  "key": "api_key",
+                  "value": "123456789",
+                  "type": "text",
+                  "description": "From uploads[].apiKey"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://api.cloudinary.com/v1_1/{{cloudName}}/raw/upload",
+              "protocol": "https",
+              "host": ["api", "cloudinary", "com"],
+              "path": ["v1_1", "{{cloudName}}", "raw", "upload"]
+            },
+            "description": "After receiving upload parameters from PUT /api/profile, upload the actual file to Cloudinary.\n\nReplace:\n- {{cloudName}} with uploads[].cloudName\n- Use 'raw' for PDFs, 'image' for images\n- All form fields come from the uploads[] array in the response"
+          }
+        }
+      ]
+    }
+  ]
+}
+

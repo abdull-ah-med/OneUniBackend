@@ -115,7 +115,6 @@ public class TokenService : ITokenService
                 IsRevoked = false
             };
             await _unitOfWork.UserRefreshTokens.AddAsync(newRefreshToken, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result<string>.Success(refreshTokenHash);
         }
@@ -145,7 +144,6 @@ public class TokenService : ITokenService
         bool result = await _unitOfWork.UserRefreshTokens.RevokeRefreshTokenAsync(refreshTokenHash, cancellationToken);
         if (result)
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();
         }
         return Result.Failure("REFRESH_TOKEN_REVOKE_FAILED");
@@ -156,7 +154,6 @@ public class TokenService : ITokenService
         bool result = await _unitOfWork.UserRefreshTokens.RevokeAllUserRefreshTokensAsync(userId, cancellationToken);
         if (result)
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();
         }
         else
@@ -167,10 +164,6 @@ public class TokenService : ITokenService
     public async Task RemoveExpiredRefreshTokensAsync(CancellationToken cancellationToken = default)
     {
         bool result = await _unitOfWork.UserRefreshTokens.RemoveExpiredRefreshTokensAsync(cancellationToken);
-        if (result)
-        {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
     }
 
     public Result<CompleteGoogleSignUpRequestDTO> ValidateTemporaryAccessToken(string token)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 using OneUniBackend.Enums;
 namespace OneUniBackend.Entities;
@@ -10,6 +11,7 @@ namespace OneUniBackend.Entities;
 [Table("documents")]
 [Index("ApplicationId", Name = "idx_documents_application_id")]
 [Index("UserId", Name = "idx_documents_user_id")]
+[Index("EducationalRecordId", Name = "idx_documents_educational_record_id")]
 public partial class Document
 {
     [Key]
@@ -22,6 +24,9 @@ public partial class Document
     [Column("application_id")]
     public Guid? ApplicationId { get; set; }
 
+    [Column("educational_record_id")]
+    public Guid? EducationalRecordId { get; set; }
+
     [Column("document_name")]
     [StringLength(255)]
     public string DocumentName { get; set; } = null!;
@@ -32,6 +37,22 @@ public partial class Document
     [Column("file_path")]
     [StringLength(500)]
     public string FilePath { get; set; } = null!;
+
+    [Column("bucket")]
+    [StringLength(200)]
+    public string? Bucket { get; set; }
+
+    [Column("object_key")]
+    [StringLength(500)]
+    public string? ObjectKey { get; set; }
+
+    [Column("storage_provider")]
+    [StringLength(50)]
+    public string? StorageProvider { get; set; }
+
+    [Column("checksum")]
+    [StringLength(200)]
+    public string? Checksum { get; set; }
 
     [Column("file_size")]
     public int? FileSize { get; set; }
@@ -58,6 +79,9 @@ public partial class Document
     [Column("display_order")]
     public int? DisplayOrder { get; set; }
 
+    [Column("metadata", TypeName = "jsonb")]
+    public JsonDocument? Metadata { get; set; }
+
     [Column("created_at", TypeName = "timestamp with time zone")]
     public DateTime? CreatedAt { get; set; }
 
@@ -67,6 +91,10 @@ public partial class Document
     [ForeignKey("ApplicationId")]
     [InverseProperty("Documents")]
     public virtual Application? Application { get; set; }
+
+    [ForeignKey("EducationalRecordId")]
+    [InverseProperty("Documents")]
+    public virtual EducationalRecord? EducationalRecord { get; set; }
 
     [ForeignKey("UserId")]
     [InverseProperty("DocumentUsers")]

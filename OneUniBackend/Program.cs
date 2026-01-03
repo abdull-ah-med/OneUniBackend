@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using OneUniBackend.Configuration;
 using OneUniBackend.Data;
 using OneUniBackend.Extensions;
@@ -38,7 +39,15 @@ builder.Services.AddConfiguredCors();
 // 9) Swagger (enable later if needed)
 builder.Services.AddEndpointsApiExplorer();
 
+// 10) Health checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<OneUniDbContext>("database");
+
 var app = builder.Build();
+
+// ✔ Correlation + global exception handling early in pipeline
+app.UseMiddleware<OneUniBackend.Middleware.CorrelationIdMiddleware>();
+app.UseMiddleware<OneUniBackend.Middleware.ExceptionHandlingMiddleware>();
 
 // ✔ HTTPS
 app.UseHttpsRedirection();
@@ -48,9 +57,16 @@ app.UseCors("AllowCredentials");
 
 // ✔ Auth
 app.UseAuthentication();
+
+// ✔ CSRF (double-submit for cookie auth)
+app.UseMiddleware<OneUniBackend.Middleware.CsrfProtectionMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
+
+// ✔ Health check endpoint
+app.MapHealthChecks("/health");
 
 // ✔ Test DB connection
 await app.TestDatabaseConnection();

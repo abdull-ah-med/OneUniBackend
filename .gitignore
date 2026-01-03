@@ -106,6 +106,7 @@ Icon
 
 # PostgreSQL
 *.dump
+*.sql
 pgdata/
 
 # IDE

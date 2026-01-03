@@ -23,6 +23,8 @@ public class UnitOfWork : IUnitOfWork
         AdmissionCycles = new AdmissionCycleRepository(_context);
         UserRefreshTokens = new UserRefreshTokenRepository(_context);
         UserExternalLoginRepository = new UserExternalLoginRepository(_context);
+        Documents = new DocumentRepository(_context);
+        EducationalRecords = new EducationalRecordRepository(_context);
     }
 
     public IUserRepository Users { get; }
@@ -35,6 +37,8 @@ public class UnitOfWork : IUnitOfWork
     public IAdmissionCycleRepository AdmissionCycles { get; }
     public IUserRefreshTokenRepository UserRefreshTokens { get; }
     public IUserExternalLoginRepository UserExternalLoginRepository { get; }
+    public IDocumentRepository Documents { get; }
+    public IEducationalRecordRepository EducationalRecords { get; }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);

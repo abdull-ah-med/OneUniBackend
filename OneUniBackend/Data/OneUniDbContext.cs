@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using OneUniBackend.Enums;
@@ -54,9 +54,6 @@ public partial class OneUniDbContext : DbContext
     public virtual DbSet<UserLogin> UserLogins { get; set; }
 
     public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-   => optionsBuilder.UseNpgsql("Host=localhost;Database=oneuni;Username=postgres;Password=");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -157,9 +154,17 @@ public partial class OneUniDbContext : DbContext
             entity.Property(e => e.IsRequired).HasDefaultValue(false);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)");
 
+            entity.HasIndex(e => new { e.EducationalRecordId, e.DocumentType }, "idx_documents_record_type_unique")
+                .IsUnique()
+                .HasFilter("educational_record_id IS NOT NULL");
+
             entity.HasOne(d => d.Application).WithMany(p => p.Documents)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("documents_application_id_fkey");
+
+            entity.HasOne(d => d.EducationalRecord).WithMany(p => p.Documents)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("documents_educational_record_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.DocumentUsers)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -301,8 +306,8 @@ public partial class OneUniDbContext : DbContext
             entity.Property(e => e.GuardianRelation).HasColumnType("guardian_relation");
             entity.Property(e => e.CompletionPercentage).HasDefaultValue(0);
             entity.Property(e => e.HostelPriority).HasDefaultValue(false);
-            entity.Property(e => e.IsDisabled).HasDefaultValue(false);
             entity.Property(e => e.IsHafizQuran).HasDefaultValue(false);
+            entity.Property(e => e.IsOrphan).HasDefaultValue(false);
             entity.Property(e => e.ProfileCompleted).HasDefaultValue(false);
             entity.Property(e => e.ScholarshipPriority).HasDefaultValue(false);
 

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 using OneUniBackend.Enums;
 namespace OneUniBackend.Entities;
@@ -47,8 +47,27 @@ public partial class StudentProfile
     [StringLength(255)]
     public string? GuardianName { get; set; }
 
+    [Column("father_name")]
+    [StringLength(255)]
+    public string? FatherName { get; set; }
+
     [Column("guardian_relation", TypeName = "guardian_relation")]
     public GuardianRelation? GuardianRelation { get; set; }
+
+    [Column("guardian_phone")]
+    [StringLength(20)]
+    public string? GuardianPhone { get; set; }
+
+    [Column("guardian_cnic")]
+    [StringLength(15)]
+    public string? GuardianCnic { get; set; }
+
+    [Column("guardian_city")]
+    [StringLength(100)]
+    public string? GuardianCity { get; set; }
+
+    [Column("guardian_address")]
+    public string? GuardianAddress { get; set; }
 
     [Column("city")]
     [StringLength(100)]
@@ -71,6 +90,10 @@ public partial class StudentProfile
     [Column("hostel_priority")]
     public bool? HostelPriority { get; set; }
 
+    [Column("guardian_income")]
+    [Precision(12, 2)]
+    public decimal? GuardianIncome { get; set; }
+
     [Column("preferred_admission_city")]
     [StringLength(100)]
     public string? PreferredAdmissionCity { get; set; }
@@ -82,12 +105,14 @@ public partial class StudentProfile
     [Column("is_hafiz_quran")]
     public bool? IsHafizQuran { get; set; }
 
-    [Column("is_disabled")]
-    public bool? IsDisabled { get; set; }
+    [Column("is_orphan")]
+    public bool? IsOrphan { get; set; }
 
-    [Column("sports")]
-    [StringLength(100)]
-    public string? Sports { get; set; }
+    [Column("disability", TypeName = "jsonb")]
+    public JsonDocument? Disability { get; set; }
+
+    [Column("sports", TypeName = "jsonb")]
+    public JsonDocument? Sports { get; set; }
 
     [Column("profile_completed")]
     public bool? ProfileCompleted { get; set; }

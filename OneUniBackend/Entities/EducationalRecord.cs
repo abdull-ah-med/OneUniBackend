@@ -62,4 +62,7 @@ public partial class EducationalRecord
     [ForeignKey("UserId")]
     [InverseProperty("EducationalRecords")]
     public virtual User? User { get; set; }
+
+    [InverseProperty("EducationalRecord")]
+    public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
 }

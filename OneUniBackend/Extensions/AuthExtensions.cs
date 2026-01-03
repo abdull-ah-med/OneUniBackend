@@ -35,7 +35,11 @@ public static class AuthExtensions
                 {
                     OnMessageReceived = context =>
                     {
-                        context.Token = context.Request.Cookies["access_token"];
+                        // Prefer Authorization header; fall back to cookie for browser flows.
+                        if (string.IsNullOrWhiteSpace(context.Token))
+                        {
+                            context.Token = context.Request.Cookies["access_token"];
+                        }
                         return Task.CompletedTask;
                     }
                 };

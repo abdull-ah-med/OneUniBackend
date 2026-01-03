@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -390,6 +391,16 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("application_id");
 
+                    b.Property<string>("Bucket")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("bucket");
+
+                    b.Property<string>("Checksum")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("checksum");
+
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -412,6 +423,10 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("document_type")
                         .HasColumnName("document_type");
 
+                    b.Property<Guid?>("EducationalRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("educational_record_id");
+
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -421,6 +436,10 @@ namespace OneUniBackend.Migrations
                     b.Property<int?>("FileSize")
                         .HasColumnType("integer")
                         .HasColumnName("file_size");
+
+                    b.Property<JsonDocument>("Metadata")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata");
 
                     b.Property<bool?>("IsRequired")
                         .ValueGeneratedOnAdd()
@@ -433,9 +452,19 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("mime_type");
 
+                    b.Property<string>("ObjectKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("object_key");
+
                     b.Property<string>("RejectionReason")
                         .HasColumnType("text")
                         .HasColumnName("rejection_reason");
+
+                    b.Property<string>("StorageProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("storage_provider");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -467,6 +496,14 @@ namespace OneUniBackend.Migrations
 
                     b.HasIndex(new[] { "ApplicationId" }, "idx_documents_application_id")
                         .HasDatabaseName("ix_documents_application_id");
+
+                    b.HasIndex(new[] { "EducationalRecordId" }, "idx_documents_educational_record_id")
+                        .HasDatabaseName("ix_documents_educational_record_id");
+
+                    b.HasIndex(new[] { "EducationalRecordId", "DocumentType" }, "idx_documents_record_type_unique")
+                        .IsUnique()
+                        .HasFilter("educational_record_id IS NOT NULL")
+                        .HasDatabaseName("ix_documents_record_type_unique");
 
                     b.HasIndex(new[] { "UserId" }, "idx_documents_user_id")
                         .HasDatabaseName("ix_documents_user_id");
@@ -1152,9 +1189,33 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("guardian_name");
 
+                    b.Property<string>("FatherName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("father_name");
+
                     b.Property<GuardianRelation?>("GuardianRelation")
                         .HasColumnType("guardian_relation")
                         .HasColumnName("guardian_relation");
+
+                    b.Property<string>("GuardianPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("guardian_phone");
+
+                    b.Property<string>("GuardianCnic")
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("guardian_cnic");
+
+                    b.Property<string>("GuardianCity")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("guardian_city");
+
+                    b.Property<string>("GuardianAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("guardian_address");
 
                     b.Property<bool?>("HostelPriority")
                         .ValueGeneratedOnAdd()
@@ -1167,21 +1228,26 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("household_income");
 
+                    b.Property<decimal?>("GuardianIncome")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("guardian_income");
+
                     b.Property<IdDocumentType?>("IdDocumentType")
                         .HasColumnType("id_document_type")
                         .HasColumnName("id_document_type");
-
-                    b.Property<bool?>("IsDisabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_disabled");
 
                     b.Property<bool?>("IsHafizQuran")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_hafiz_quran");
+
+                    b.Property<bool?>("IsOrphan")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_orphan");
 
                     b.Property<string>("NicopNumber")
                         .HasMaxLength(20)
@@ -1214,15 +1280,18 @@ namespace OneUniBackend.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("profile_picture_url");
 
+                    b.Property<JsonDocument>("Disability")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("disability");
+
                     b.Property<bool?>("ScholarshipPriority")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("scholarship_priority");
 
-                    b.Property<string>("Sports")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                    b.Property<JsonDocument>("Sports")
+                        .HasColumnType("jsonb")
                         .HasColumnName("sports");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1736,6 +1805,12 @@ namespace OneUniBackend.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("documents_application_id_fkey");
 
+                    b.HasOne("OneUniBackend.Entities.EducationalRecord", "EducationalRecord")
+                        .WithMany("Documents")
+                        .HasForeignKey("EducationalRecordId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("documents_educational_record_id_fkey");
+
                     b.HasOne("OneUniBackend.Entities.User", "User")
                         .WithMany("DocumentUsers")
                         .HasForeignKey("UserId")
@@ -1750,6 +1825,8 @@ namespace OneUniBackend.Migrations
 
                     b.Navigation("Application");
 
+                    b.Navigation("EducationalRecord");
+
                     b.Navigation("User");
 
                     b.Navigation("VerifiedByNavigation");
@@ -1762,6 +1839,8 @@ namespace OneUniBackend.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("educational_records_user_id_fkey");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("User");
                 });

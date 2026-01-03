@@ -23,6 +23,8 @@ public class CookieService : ICookieService
     {
         var response = _httpContextAccessor.HttpContext!.Response;
         var isProduction = _environment.IsProduction();
+        var cookieDomain = Environment.GetEnvironmentVariable("COOKIE_DOMAIN");
+        var csrfToken = Guid.NewGuid().ToString("N");
         
         response.Cookies.Append("access_token", accessToken, new CookieOptions
         {
@@ -30,7 +32,8 @@ public class CookieService : ICookieService
             Secure = isProduction,
             SameSite = SameSiteMode.Lax,  // Lax allows cookies on redirects
             Path = "/",
-            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes)
+            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+            Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
         });
 
         if(!string.IsNullOrEmpty(refreshToken))
@@ -41,29 +44,52 @@ public class CookieService : ICookieService
                 Secure = isProduction,
                 SameSite = SameSiteMode.Lax,
                 Path = "/",
-                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
+                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays),
+                Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
             });
         }
+
+        // CSRF double-submit token (non-HttpOnly)
+        response.Cookies.Append("XSRF-TOKEN", csrfToken, new CookieOptions
+        {
+            HttpOnly = false,
+            Secure = isProduction,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpiresInMinutes),
+            Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
+        });
     }
     
     public void ClearAuthCookies()
     {
         var response = _httpContextAccessor.HttpContext!.Response;
         var isProduction = _environment.IsProduction();
+        var cookieDomain = Environment.GetEnvironmentVariable("COOKIE_DOMAIN");
         
         response.Cookies.Delete("access_token", new CookieOptions
         {
             Path = "/",
             SameSite = SameSiteMode.Lax,
             HttpOnly = true,
-            Secure = isProduction
+            Secure = isProduction,
+            Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
         });
         response.Cookies.Delete("refresh_token", new CookieOptions
         {
             Path = "/",
             SameSite = SameSiteMode.Lax,
             HttpOnly = true,
-            Secure = isProduction
+            Secure = isProduction,
+            Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
+        });
+        response.Cookies.Delete("XSRF-TOKEN", new CookieOptions
+        {
+            Path = "/",
+            SameSite = SameSiteMode.Lax,
+            HttpOnly = false,
+            Secure = isProduction,
+            Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
         });
     }
 }

@@ -1,14 +1,16 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace OneUniBackend.Extensions;
 
 public static class CorsExtensions
 {
-    public static void AddConfiguredCors(this IServiceCollection services)
+    public static void AddConfiguredCors(this IServiceCollection services, IConfiguration configuration)
     {
-        var allowedOrigins = 
-            Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")?.Split(',') 
-            ?? new[] { "http://localhost:3000" };
+        var allowedOriginsConfig = configuration["AllowedOrigins"]
+            ?? throw new InvalidOperationException("AllowedOrigins is not configured. Ensure ALLOWED_ORIGINS environment variable is set.");
+        
+        var allowedOrigins = allowedOriginsConfig.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         services.AddCors(options =>
         {

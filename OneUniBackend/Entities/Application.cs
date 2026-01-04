@@ -64,7 +64,7 @@ public partial class Application
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual Program? Program { get; set; }
+    public virtual DegreeProgram? Program { get; set; }
 
     public virtual University? University { get; set; }
 

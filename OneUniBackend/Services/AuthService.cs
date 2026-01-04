@@ -267,7 +267,7 @@ public class AuthService : IAuthService
             await _unitOfWork.Users.AddAsync(newUser);
             UserLogin newUserLogin = new UserLogin
             {
-                UserId = newUser.UserId,
+                Userid = newUser.UserId,
                 Providerkey = tokenData.GoogleUserId,
                 Providerdisplayname = "google",
                 Loginprovider = "google"

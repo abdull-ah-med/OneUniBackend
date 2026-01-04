@@ -1,5 +1,5 @@
 using OneUniBackend.Entities;
-using ProgramEntity = OneUniBackend.Entities.Program;
+using ProgramEntity = OneUniBackend.Entities.DegreeProgram;
 
 namespace OneUniBackend.Interfaces.Repositories;
 

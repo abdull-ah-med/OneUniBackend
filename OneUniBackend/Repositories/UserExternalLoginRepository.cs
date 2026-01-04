@@ -21,7 +21,7 @@ public class UserExternalLoginRepository : GenericRepository<UserLogin>, IUserEx
      public async Task<IEnumerable<UserLogin>> GetLoginsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Where(ul => ul.UserId == userId)
+            .Where(ul => ul.Userid == userId)
             .ToListAsync(cancellationToken);
     }
     public async Task<bool> ExistsAsync(string provider, string providerKey, CancellationToken cancellationToken = default)

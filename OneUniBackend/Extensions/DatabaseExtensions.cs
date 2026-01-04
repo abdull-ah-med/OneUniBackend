@@ -10,12 +10,17 @@ public static class DatabaseExtensions
 {
     public static void AddConfiguredDatabase(this IServiceCollection services, IConfiguration config)
     {
-        var connectionString =
-            $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-            $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-            $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "oneuni"};" +
-            $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "postgres"};" +
-            $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "postgres"}";
+        var dbHost = config["Database:Host"] 
+            ?? throw new InvalidOperationException("Database:Host is not configured");
+        var dbPort = config["Database:Port"] ?? "5432";
+        var dbName = config["Database:Name"] 
+            ?? throw new InvalidOperationException("Database:Name is not configured");
+        var dbUser = config["Database:User"] 
+            ?? throw new InvalidOperationException("Database:User is not configured");
+        var dbPassword = config["Database:Password"] 
+            ?? throw new InvalidOperationException("Database:Password is not configured");
+
+        var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 

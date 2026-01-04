@@ -71,12 +71,11 @@ appsettings.Local.json
 *.Development.json
 *.Local.json
 
-# Entity Framework Core
+# Entity Framework Core / Database
 *.db
 *.db-shm
 *.db-wal
-Migrations/*.cs
-!Migrations/*Initial*.cs
+**/Migrations/
 
 # Logs
 logs/

@@ -18,7 +18,7 @@ public class UnitOfWork : IUnitOfWork
         Applications = new ApplicationRepository(_context);
         StudentProfiles = new StudentProfileRepository(_context);
         Mentors = new MentorRepository(_context);
-        Programs = new ProgramRepository(_context);
+        Programs = new DegreeProgramRepository(_context);
         Departments = new DepartmentRepository(_context);
         AdmissionCycles = new AdmissionCycleRepository(_context);
         UserRefreshTokens = new UserRefreshTokenRepository(_context);

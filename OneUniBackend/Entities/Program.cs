@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OneUniBackend.Entities;
 
-public partial class Program
+public partial class DegreeProgram
 {
     public Guid ProgramId { get; set; }
 

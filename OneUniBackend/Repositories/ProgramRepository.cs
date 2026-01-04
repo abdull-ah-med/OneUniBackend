@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using OneUniBackend.Interfaces.Repositories;
 using OneUniBackend.Entities;
 using OneUniBackend.Data;
-using ProgramEntity = OneUniBackend.Entities.Program;
+using ProgramEntity = OneUniBackend.Entities.DegreeProgram;
 namespace OneUniBackend.Repositories;
 
-public class ProgramRepository : GenericRepository<ProgramEntity>, IProgramRepository
+public class DegreeProgramRepository : GenericRepository<ProgramEntity>, IProgramRepository
 {
-    public ProgramRepository(OneUniDbContext context) : base(context)
+    public DegreeProgramRepository(OneUniDbContext context) : base(context)
     {
     }
 

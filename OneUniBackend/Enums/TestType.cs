@@ -4,21 +4,21 @@ namespace OneUniBackend.Enums;
 
 public enum TestType
 {
-    [PgName("NET")]
+    [PgName("net")]
     NET,
-    [PgName("ECAT")]
+    [PgName("ecat")]
     ECAT,
-    [PgName("MDCAT")]
+    [PgName("mdcat")]
     MDCAT,
-    [PgName("SAT")]
+    [PgName("sat")]
     SAT,
-    [PgName("IELTS")]
+    [PgName("ielts")]
     IELTS,
-    [PgName("TOEFL")]
+    [PgName("toefl")]
     TOEFL,
-    [PgName("FAST")]
+    [PgName("fast")]
     FAST,
-    [PgName("LUMS")]
+    [PgName("lums")]
     LUMS,
     [PgName("other")]
     Other

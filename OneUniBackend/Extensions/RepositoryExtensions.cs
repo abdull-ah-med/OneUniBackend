@@ -15,7 +15,7 @@ public static class RepositoryExtensions
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
         services.AddScoped<IMentorRepository, MentorRepository>();
-        services.AddScoped<IProgramRepository, ProgramRepository>();
+        services.AddScoped<IProgramRepository, DegreeProgramRepository>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IAdmissionCycleRepository, AdmissionCycleRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();

@@ -62,7 +62,7 @@ public class GoogleOAuthService : IGoogleOAuthService
                 Providerkey = googleuniqueID,
                 Loginprovider = "Google",
                 Providerdisplayname = "Google",
-                UserId = userID
+                Userid = userID
             };
             await _unitOfWork.UserExternalLoginRepository.AddAsync(userExternalLogin);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);

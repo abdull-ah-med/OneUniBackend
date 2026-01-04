@@ -247,10 +247,12 @@ namespace OneUniBackend.Controllers.Auth
         private IActionResult RedirectToFrontend(string path, string? errorCode = null, int statusCode = StatusCodes.Status303SeeOther)
         {
             var targetPath = AllowedFrontendPaths.Contains(path) ? path : "/auth/error";
-            var configuredBase = _configuration["FrontendUrl"];
+            var configuredBase = _configuration["FrontendBaseUrl"]
+                ?? throw new InvalidOperationException("FrontendBaseUrl is not configured. Ensure FRONTEND_BASE_URL environment variable is set.");
+            
             if (!Uri.TryCreate(configuredBase, UriKind.Absolute, out var baseUri))
             {
-                baseUri = new Uri("http://localhost:3000");
+                throw new InvalidOperationException($"FrontendBaseUrl '{configuredBase}' is not a valid absolute URI.");
             }
 
             var uriBuilder = new UriBuilder(baseUri)

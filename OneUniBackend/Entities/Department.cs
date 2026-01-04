@@ -27,7 +27,7 @@ public partial class Department
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<Program> Programs { get; set; } = new List<Program>();
+    public virtual ICollection<DegreeProgram> Programs { get; set; } = new List<DegreeProgram>();
 
     public virtual University? University { get; set; }
 }

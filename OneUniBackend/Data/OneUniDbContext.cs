@@ -33,7 +33,7 @@ public partial class OneUniDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
-    public virtual DbSet<Program> Programs { get; set; }
+    public virtual DbSet<DegreeProgram> DegreePrograms { get; set; }
 
     public virtual DbSet<Scholarship> Scholarships { get; set; }
 
@@ -64,8 +64,8 @@ public partial class OneUniDbContext : DbContext
             .HasPostgresEnum("session_type", new[] { "free", "paid" })
             .HasPostgresEnum("test_type", new[] { "NET", "ECAT", "MDCAT", "SAT", "IELTS", "TOEFL", "FAST", "LUMS", "other" })
             .HasPostgresEnum("user_role", new[] { "student", "mentor", "university_representative", "admin" })
-            .HasPostgresEnum("verification_status", new[] { "pending", "verified", "rejected" })
-            .HasPostgresExtension("uuid-ossp");
+            .HasPostgresEnum("verification_status", new[] { "pending", "verified", "rejected" });
+            // Using gen_random_uuid() which is built-in to PostgreSQL 13+ (Azure compatible)
 
         modelBuilder.Entity<AdmissionCycle>(entity =>
         {
@@ -74,7 +74,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("admission_cycles");
 
             entity.Property(e => e.CycleId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("cycle_id");
             entity.Property(e => e.AcademicYear)
                 .HasMaxLength(10)
@@ -116,7 +116,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_applications_user_id");
 
             entity.Property(e => e.ApplicationId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("application_id");
             entity.Property(e => e.AdmissionOffered)
                 .HasDefaultValue(false)
@@ -195,7 +195,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("audit_logs");
 
             entity.Property(e => e.LogId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("log_id");
             entity.Property(e => e.Action)
                 .HasMaxLength(100)
@@ -232,7 +232,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UniversityId, "idx_departments_university_id");
 
             entity.Property(e => e.DepartmentId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("department_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -280,7 +280,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_documents_user_id");
 
             entity.Property(e => e.DocumentId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("document_id");
             entity.Property(e => e.ApplicationId).HasColumnName("application_id");
             entity.Property(e => e.Bucket)
@@ -362,7 +362,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_educational_records_user_id");
 
             entity.Property(e => e.RecordId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("record_id");
             entity.Property(e => e.BoardUniversity)
                 .HasMaxLength(255)
@@ -409,7 +409,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("mentors");
 
             entity.Property(e => e.MentorId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("mentor_id");
             entity.Property(e => e.AvailabilityHours)
                 .HasColumnType("jsonb")
@@ -485,7 +485,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.StudentId, "idx_mentorship_sessions_student_id");
 
             entity.Property(e => e.SessionId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("session_id");
             entity.Property(e => e.ActualEndTime).HasColumnName("actual_end_time");
             entity.Property(e => e.ActualStartTime).HasColumnName("actual_start_time");
@@ -543,7 +543,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("merit_formulas");
 
             entity.Property(e => e.FormulaId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("formula_id");
             entity.Property(e => e.AcademicYear)
                 .HasMaxLength(10)
@@ -608,7 +608,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_notifications_user_id");
 
             entity.Property(e => e.NotificationId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("notification_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -641,16 +641,16 @@ public partial class OneUniDbContext : DbContext
                 .HasConstraintName("notifications_user_id_fkey");
         });
 
-        modelBuilder.Entity<Program>(entity =>
+        modelBuilder.Entity<DegreeProgram>(entity =>
         {
-            entity.HasKey(e => e.ProgramId).HasName("programs_pkey");
+            entity.HasKey(e => e.ProgramId).HasName("degree_programs_pkey");
 
             entity.ToTable("programs");
 
             entity.HasIndex(e => e.DepartmentId, "idx_programs_department_id");
 
             entity.Property(e => e.ProgramId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("program_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -689,7 +689,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("scholarships");
 
             entity.Property(e => e.ScholarshipId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("scholarship_id");
             entity.Property(e => e.AcademicYear)
                 .HasMaxLength(10)
@@ -741,7 +741,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_student_profiles_user_id");
 
             entity.Property(e => e.ProfileId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("profile_id");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.City)
@@ -845,7 +845,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_test_scores_user_id");
 
             entity.Property(e => e.ScoreId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("score_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -884,7 +884,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("universities");
 
             entity.Property(e => e.UniversityId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("university_id");
             entity.Property(e => e.Accreditation).HasColumnName("accreditation");
             entity.Property(e => e.Address).HasColumnName("address");
@@ -940,7 +940,7 @@ public partial class OneUniDbContext : DbContext
             entity.ToTable("university_representatives");
 
             entity.Property(e => e.RepId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("rep_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -998,7 +998,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
 
             entity.Property(e => e.UserId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("user_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")
@@ -1066,7 +1066,7 @@ public partial class OneUniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_user_refresh_tokens_user_id");
 
             entity.Property(e => e.TokenId)
-                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("token_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() AT TIME ZONE 'UTC'::text)")

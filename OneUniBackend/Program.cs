@@ -34,7 +34,7 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddGoogleJwtAuthentication(builder.Configuration);
 
 // 8) Add CORS
-builder.Services.AddConfiguredCors();
+builder.Services.AddConfiguredCors(builder.Configuration);
 
 // 9) Swagger (enable later if needed)
 builder.Services.AddEndpointsApiExplorer();

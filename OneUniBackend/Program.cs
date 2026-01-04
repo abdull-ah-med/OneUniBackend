@@ -8,7 +8,12 @@ using OneUniBackend.Repositories;
 using OneUniBackend.Services;
 using DotNetEnv;
 
-Env.Load();
+// Only load .env file in development (not in Azure/production)
+if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production" 
+    && File.Exists(".env"))
+{
+    Env.Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

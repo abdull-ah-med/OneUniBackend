@@ -14,7 +14,7 @@ public class DepartmentRepository : GenericRepository<Department>, IDepartmentRe
     public async Task<IEnumerable<Department>> GetByUniversityIdAsync(Guid universityId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Include(d => d.Program)
+            .Include(d => d.Programs)
             .Where(d => d.UniversityId == universityId && d.IsActive == true)
             .ToListAsync(cancellationToken);
     }

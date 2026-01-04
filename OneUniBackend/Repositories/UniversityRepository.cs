@@ -32,7 +32,7 @@ public class UniversityRepository : GenericRepository<University>, IUniversityRe
     {
         return await _dbSet
             .Include(u => u.Departments)
-            .ThenInclude(d => d.Program)
+            .ThenInclude(d => d.Programs)
             .FirstOrDefaultAsync(u => u.UniversityId == id, cancellationToken);
     }
 }

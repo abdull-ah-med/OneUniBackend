@@ -120,6 +120,14 @@ public class OneProfileService : IOneProfileService
 
     private async Task<StudentProfile> UpsertProfileAsync(Guid userId, StudentProfile? profile, StudentProfilePayloadDto dto, CancellationToken cancellationToken)
     {
+        // Update User's FullName
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        if (user != null && !string.IsNullOrWhiteSpace(dto.FullName))
+        {
+            user.FullName = dto.FullName;
+            await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
+        }
+
         var target = profile ?? new StudentProfile
         {
             ProfileId = Guid.NewGuid(),
@@ -127,7 +135,6 @@ public class OneProfileService : IOneProfileService
             CreatedAt = DateTime.UtcNow
         };
 
-        target.FullName = dto.FullName;
         target.DateOfBirth = dto.DateOfBirth;
         target.Gender = dto.Gender;
         target.IdDocumentType = dto.IdDocumentType;
@@ -312,12 +319,20 @@ public class OneProfileService : IOneProfileService
         IEnumerable<Document> documents,
         CancellationToken cancellationToken)
     {
+        // Get FullName from User entity
+        string? fullName = null;
+        if (profile?.UserId != null)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(profile.UserId.Value, cancellationToken);
+            fullName = user?.FullName;
+        }
+
         var profileDto = profile is null
             ? new StudentProfilePayloadDto()
             : new StudentProfilePayloadDto
             {
                 ProfileId = profile.ProfileId,
-                FullName = profile.FullName,
+                FullName = fullName ?? string.Empty,
                 DateOfBirth = profile.DateOfBirth,
                 Gender = profile.Gender,
                 IdDocumentType = profile.IdDocumentType,

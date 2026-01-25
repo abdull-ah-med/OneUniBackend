@@ -6,7 +6,7 @@ import enum
 import uuid
 Base = declarative_base()
 
-class InjgestionStatus(str, enum.Enum):
+class IngestionStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -15,17 +15,17 @@ class ChunkType(str, enum.Enum):
     HEADING = "heading"
     PARAGRAPH = "paragraph"
     TABLE = "table"
-    List = "list"
+    LIST = "list"
 class ProspectusIngestion(Base):
-    __tablename__ = "prospectus_ingestion"
-    ingestion_id = Column(UUID, primary_key=True, default=uuid.uuid4)
-    university_id = Column(UUID, ForeignKey("universities.university_id"), nullable=True)
-    blob_url = Column[str](Text, nullable=False)
-    file_name = Column[str](Text, nullable=False)
-    mime_type = Column[str](String(100))
-    file_size_bytes = Column[int](Integer)
+    __tablename__ = "prospectus_ingestions"
+    ingestion_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    university_id = Column(UUID(as_uuid=True), ForeignKey("universities.university_id"), nullable=True)
+    blob_url = Column(Text, nullable=False)
+    file_name = Column(Text, nullable=False)
+    mime_type = Column(String(100))
+    file_size_bytes = Column(Integer)
 
-    status = Column(String(20), default=InjgestionStatus.PENDING.value, nullable=False)
+    status = Column(String(20), default=IngestionStatus.PENDING.value, nullable=False)
     error_message = Column(Text)
     retry_count = Column(Integer, default=0)
 
@@ -38,9 +38,20 @@ class ProspectusIngestion(Base):
     chunks = relationship("ProspectusChunk", back_populates="ingestion", cascade="all, delete-orphan")
 
 class ProspectusExtraction(Base):
-    __tablename__ = "prospectus_extraction"
-    extraction_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    ingestion_id = Column(UUID(as_uuid=True), ForeignKey("prospectus_ingestion.ingestion_id"), nullable=False)
+    __tablename__ = "prospectus_extractions"
+    extraction_id = Column(UUID(as_uuid=True), primary_key=True, default = uuid.uuid4)
+    ingestion_id = Column(UUID(as_uuid=True), ForeignKey("prospectus_ingestions.ingestion_id"), nullable=False)
+    schema_version = Column(String(20), default="v1.0.0", nullable=False)
+    extracted_json=Column(JSONB, nullable=False)
+    confidence_scores=Column(Numeric(3, 2))
+    total_entities_extracted=Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    ingestion = relationship("ProspectusIngestion", back_populates="extractions")
+
+class ProspectusChunk(Base):
+    __tablename__ = "prospectus_chunks"
+    chunk_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ingestion_id = Column(UUID(as_uuid=True), ForeignKey("prospectus_ingestions.ingestion_id"), nullable=False)
     chunk_type = Column(String(20))
     chunk_text = Column(Text, nullable=False)
     page_number = Column(Integer)
@@ -67,4 +78,3 @@ def get_engine(database_url:str):
 
 def get_session_factory(engine):
     return sessionmaker(bind=engine)
-    

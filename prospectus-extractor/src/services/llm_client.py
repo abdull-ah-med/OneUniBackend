@@ -38,12 +38,12 @@ class ExtractionService:
         self.client = instructor.from_openai(
             AsyncOpenAI(
                 base_url=settings.llm_base_url,
-                api_key=settings.groq_api_key or "ollama",
+                api_key="ollama",
             ),
             mode=instructor.Mode.JSON,
         )
         self.model_name = settings.llm_model_name
-        self.semaphore = asyncio.Semaphore(2)  # Reduced for Groq Rate Limits (12k TPM)
+        self.semaphore = asyncio.Semaphore(5)  # Azure VM Concurrency
 
     async def _extract_batch(
         self, 

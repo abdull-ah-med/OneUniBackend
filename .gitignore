@@ -113,3 +113,16 @@ pgdata/
 *.swp
 *.swo
 *~
+
+*.cursor
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+*.egg
+dist/
+build/
+.pytest_cache/

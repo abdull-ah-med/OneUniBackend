@@ -50,15 +50,17 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// ✔ Correlation + global exception handling early in pipeline
+// ✔ Correlation ID for request tracking
 app.UseMiddleware<OneUniBackend.Middleware.CorrelationIdMiddleware>();
-app.UseMiddleware<OneUniBackend.Middleware.ExceptionHandlingMiddleware>();
 
 // ✔ HTTPS
 app.UseHttpsRedirection();
 
-// ✔ CORS
+// ✔ CORS - must be before exception handling so error responses also have CORS headers
 app.UseCors("AllowCredentials");
+
+// ✔ Global exception handling
+app.UseMiddleware<OneUniBackend.Middleware.ExceptionHandlingMiddleware>();
 
 // ✔ Auth
 app.UseAuthentication();

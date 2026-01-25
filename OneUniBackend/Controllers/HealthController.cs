@@ -19,9 +19,6 @@ public class HealthController : ControllerBase
         _environment = environment;
     }
 
-    /// <summary>
-    /// Basic health check - lightweight endpoint for load balancers and uptime monitors
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(BasicHealthResponse), StatusCodes.Status200OK)]
     public IActionResult Get()
@@ -35,9 +32,6 @@ public class HealthController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Detailed health check - comprehensive system status with dependency checks
-    /// </summary>
     [HttpGet("detailed")]
     [ProducesResponseType(typeof(DetailedHealthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(DetailedHealthResponse), StatusCodes.Status503ServiceUnavailable)]
@@ -75,11 +69,6 @@ public class HealthController : ControllerBase
 
         return StatusCode(statusCode, response);
     }
-
-    /// <summary>
-    /// Liveness probe - indicates if the application is running
-    /// Used by orchestrators (Kubernetes, Azure) to determine if app needs restart
-    /// </summary>
     [HttpGet("live")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetLiveness()
@@ -90,11 +79,6 @@ public class HealthController : ControllerBase
             timestamp = DateTime.UtcNow
         });
     }
-
-    /// <summary>
-    /// Readiness probe - indicates if the application is ready to receive traffic
-    /// Checks if all dependencies (database, etc.) are available
-    /// </summary>
     [HttpGet("ready")]
     [ProducesResponseType(typeof(ReadinessResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ReadinessResponse), StatusCodes.Status503ServiceUnavailable)]

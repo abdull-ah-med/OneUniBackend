@@ -5,7 +5,7 @@ from azure.storage.blob.aio import BlobServiceClient, BlobClient, ContainerClien
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.storage.blob import ContentSettings
 import certifi
-from src.config import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

@@ -1,2 +1,3 @@
 from .blob_storage import BlobStorageService
-__all__ =["BlobStorageService"]
+from .document_parser import DocumentParserService
+__all__ =["BlobStorageService", "DocumentParserService"]

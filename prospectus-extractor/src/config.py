@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # LLM Service (Ollama)
     llm_base_url: str = Field(default="http://localhost:11434/v1")
     llm_model_name: str = Field(default="llama3.1:8b")
+    groq_api_key: str = Field(default="", description="Groq API Key")
     llm_temperature: float = Field(default=0.1)
     llm_max_tokens: int = Field(default=4096)
 
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 settings = Settings()

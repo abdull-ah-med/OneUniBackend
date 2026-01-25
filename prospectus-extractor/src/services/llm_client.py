@@ -38,44 +38,87 @@ class ExtractionService:
         self.client = instructor.from_openai(
             AsyncOpenAI(
                 base_url=settings.llm_base_url,
-                api_key="ollama",
+                api_key=settings.groq_api_key or "ollama",
             ),
             mode=instructor.Mode.JSON,
         )
         self.model_name = settings.llm_model_name
+        self.semaphore = asyncio.Semaphore(2)  # Reduced for Groq Rate Limits (12k TPM)
+
+    async def _extract_batch(
+        self, 
+        chunks: List[TextChunk], 
+        response_model: Type[T], 
+        prompt_instruction: str
+    ) -> T:
+        context_text = "\n\n".join([c.text for c in chunks])
+        try:
+            async with self.semaphore:
+                return await self.client.chat.completions.create(
+                    model=self.model_name,
+                    response_model=response_model,
+                    messages=[
+                        {
+                            "role": "system", 
+                            "content": "You are a precise data extraction assistant. Extract data strictly based on the provided text."
+                        },
+                        {
+                            "role": "user", 
+                            "content": f"{prompt_instruction}\n\nDATA:\n{context_text}"
+                        }
+                    ],
+                    max_retries=2,
+                )
+        except Exception as e:
+            logger.error(f"Failed to extract batch for {response_model.__name__}: {e}")
+            return response_model()
 
     async def _extract_section(
         self, 
         chunks: List[TextChunk], 
         response_model: Type[T], 
         section_tags: List[str], 
-        prompt_instruction: str
+        prompt_instruction: str,
+        batch_size: int = 10
     ) -> T:
         relevant_chunks = [c for c in chunks if c.section_label and c.section_label.lower() in section_tags]
         if not relevant_chunks:
-            relevant_chunks = chunks[:15]
+             relevant_chunks = chunks[:5]
+        chunk_batches = [relevant_chunks[i:i + batch_size] for i in range(0, len(relevant_chunks), batch_size)]
+        logger.info(f"Processing {len(relevant_chunks)} chunks for {response_model.__name__} in {len(chunk_batches)} batches.")
 
-        context_text = "\n\n".join([c.text for c in relevant_chunks])
+        tasks = [
+            self._extract_batch(batch, response_model, prompt_instruction) 
+            for batch in chunk_batches
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Aggregate results
+        final_result = response_model()
+        list_field = None
+        for name, field in response_model.model_fields.items():
+            if "List" in str(field.annotation) or "list" in str(field.annotation):
+                list_field = name
+                break
+                
+        for res in results:
+            if isinstance(res, Exception):
+                logger.error(f"Batch failed: {res}")
+                continue
+            
+            # Merge lists
+            if list_field and hasattr(res, list_field):
+                current_list = getattr(final_result, list_field)
+                batch_list = getattr(res, list_field)
+                if batch_list:
+                    current_list.extend(batch_list)
+            if response_model == AdmissionInfo:
+                if res.eligibility_criteria:
+                    final_result.eligibility_criteria = (final_result.eligibility_criteria or "") + "\n" + res.eligibility_criteria
+                if res.important_dates:
+                    final_result.important_dates.extend(res.important_dates)
 
-        try:
-            return await self.client.chat.completions.create(
-                model=self.model_name,
-                response_model=response_model,
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": "You are a precise data extraction assistant. Extract data strictly based on the provided text."
-                    },
-                    {
-                        "role": "user", 
-                        "content": f"{prompt_instruction}\n\nDATA:\n{context_text}"
-                    }
-                ],
-                max_retries=2,
-            )
-        except Exception as e:
-            logger.error(f"Failed to extract {response_model.__name__}: {e}")
-            return response_model()
+        return final_result
 
     async def extract_university_info(self, chunks: List[TextChunk]) -> UniversityInfo:
         """Extract university name, short name, and location."""

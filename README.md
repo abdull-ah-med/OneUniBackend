@@ -230,7 +230,7 @@ curl http://localhost:5162/api/health
 
 ---
 
-## 📖 API Reference
+## API Reference
 
 ### Base URL
 - **Development**: `http://localhost:5162/api`
@@ -271,7 +271,7 @@ curl http://localhost:5162/api/health
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 OneUniBackend/

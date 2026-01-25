@@ -11,7 +11,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Features](#-features)
 - [Architecture](#-architecture)
@@ -30,7 +30,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 ### Authentication & Authorization
 - **JWT-based authentication** with HttpOnly cookie storage
@@ -63,7 +63,7 @@
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 The application follows **Clean Architecture** principles with clear separation of concerns:
 
@@ -95,7 +95,7 @@ The application follows **Clean Architecture** principles with clear separation 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |----------|------------|
@@ -113,7 +113,7 @@ The application follows **Clean Architecture** principles with clear separation 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -344,7 +344,7 @@ OneUniBackend/
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Authentication Flow
 
@@ -373,7 +373,7 @@ The following endpoints are exempt from CSRF validation:
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Azure App Service Deployment
 
@@ -414,7 +414,7 @@ Configure the following in Azure App Service → Configuration → Application s
 
 ---
 
-## ☁️ Infrastructure
+## Infrastructure
 
 ### Azure Resources
 
@@ -443,7 +443,7 @@ Configure the following in Azure App Service → Configuration → Application s
 
 ---
 
-## 📝 Development Notes
+## Development Notes
 
 ### Running Migrations
 
@@ -474,13 +474,13 @@ Logs are output to console with the following levels:
 
 ---
 
-## 👥 Contributing
+## Contributing
 
 This is a private repository. Contact the project maintainers for contribution guidelines.
 
 ---
 
-## 📄 License
+## License
 
 Proprietary - All rights reserved.
 

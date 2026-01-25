@@ -16,6 +16,15 @@ class ChunkType(str, enum.Enum):
     PARAGRAPH = "paragraph"
     TABLE = "table"
     LIST = "list"
+
+class University(Base):
+    """ Minimall stub for the existing University Model / universities table"""
+    __tablename__ = "universities"
+    __table_args__ = {"extend_existing":True}
+    university_id = Column(UUID(as_uuid=True), primary_key=True)
+    name = Column(String(255))
+
+    ingestions = relationship("ProspectusIngestion", back_populates="university")
 class ProspectusIngestion(Base):
     __tablename__ = "prospectus_ingestions"
     ingestion_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -36,6 +45,7 @@ class ProspectusIngestion(Base):
 
     extractions = relationship("ProspectusExtraction", back_populates="ingestion", cascade="all, delete-orphan")
     chunks = relationship("ProspectusChunk", back_populates="ingestion", cascade="all, delete-orphan")
+    university = relationship("University", back_populates="ingestions")
 
 class ProspectusExtraction(Base):
     __tablename__ = "prospectus_extractions"

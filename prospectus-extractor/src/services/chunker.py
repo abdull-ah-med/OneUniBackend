@@ -4,9 +4,9 @@ import logging
 from typing import List, Optional
 from dataclasses import dataclass, field
 
-from config import settings
-from models.db import ChunkType
-from services.document_parser import ParsedPage, ParsedDocument
+from src.config import settings
+from src.models.db import ChunkType
+from src.services.document_parser import ParsedPage, ParsedDocument
 
 logger = logging.getLogger(__name__)
 

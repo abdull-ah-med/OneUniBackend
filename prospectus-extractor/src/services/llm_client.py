@@ -39,11 +39,12 @@ class ExtractionService:
             AsyncOpenAI(
                 base_url=settings.llm_base_url,
                 api_key="ollama",
+                timeout=600,  # 10 minutes for large models
             ),
             mode=instructor.Mode.JSON,
         )
         self.model_name = settings.llm_model_name
-        self.semaphore = asyncio.Semaphore(5)  # Azure VM Concurrency
+        self.semaphore = asyncio.Semaphore(5)  # Allow 5 concurrent requests on 8 vCPU VM (7b model)
 
     async def _extract_batch(
         self, 
@@ -52,25 +53,31 @@ class ExtractionService:
         prompt_instruction: str
     ) -> T:
         context_text = "\n\n".join([c.text for c in chunks])
+        max_context_chars = 20000
+        if len(context_text) > max_context_chars:
+            logger.warning(f"Truncating context from {len(context_text)} to {max_context_chars} chars")
+            context_text = context_text[:max_context_chars] + "\n\n[TRUNCATED]"
+        
         try:
             async with self.semaphore:
-                return await self.client.chat.completions.create(
+                result = await self.client.chat.completions.create(
                     model=self.model_name,
                     response_model=response_model,
                     messages=[
                         {
                             "role": "system", 
-                            "content": "You are a precise data extraction assistant. Extract data strictly based on the provided text."
+                            "content": "You are a precise data extraction assistant. Extract data strictly based on the provided text. Return valid JSON."
                         },
                         {
                             "role": "user", 
                             "content": f"{prompt_instruction}\n\nDATA:\n{context_text}"
                         }
                     ],
-                    max_retries=2,
+                    max_retries=3,
                 )
+                return result
         except Exception as e:
-            logger.error(f"Failed to extract batch for {response_model.__name__}: {e}")
+            logger.error(f"Failed to extract batch for {response_model.__name__}: {type(e).__name__}: {e}")
             return response_model()
 
     async def _extract_section(
@@ -79,19 +86,19 @@ class ExtractionService:
         response_model: Type[T], 
         section_tags: List[str], 
         prompt_instruction: str,
-        batch_size: int = 10
+        batch_size: int = 15  # Larger batches, fewer requests
     ) -> T:
         relevant_chunks = [c for c in chunks if c.section_label and c.section_label.lower() in section_tags]
         if not relevant_chunks:
              relevant_chunks = chunks[:5]
+        
         chunk_batches = [relevant_chunks[i:i + batch_size] for i in range(0, len(relevant_chunks), batch_size)]
-        logger.info(f"Processing {len(relevant_chunks)} chunks for {response_model.__name__} in {len(chunk_batches)} batches.")
-
-        tasks = [
-            self._extract_batch(batch, response_model, prompt_instruction) 
-            for batch in chunk_batches
-        ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        logger.info(f"Processing {len(relevant_chunks)} chunks for {response_model.__name__} in {len(chunk_batches)} batches (sequential).")
+        results = []
+        for i, batch in enumerate(chunk_batches):
+            logger.info(f"  Batch {i+1}/{len(chunk_batches)} for {response_model.__name__}...")
+            result = await self._extract_batch(batch, response_model, prompt_instruction)
+            results.append(result)
         
         # Aggregate results
         final_result = response_model()
@@ -124,62 +131,79 @@ class ExtractionService:
         """Extract university name, short name, and location."""
         first_chunks = chunks[:5]
         context_text = "\n\n".join([c.text for c in first_chunks])
+        # Truncate if needed
+        if len(context_text) > 4000:
+            context_text = context_text[:4000]
 
         try:
-            return await self.client.chat.completions.create(
-                model=self.model_name,
-                response_model=UniversityInfo,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Extract the university's basic information from the prospectus."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Extract the university name, short name (if any), and location.\n\nDATA:\n{context_text}"
-                    }
-                ],
-                max_retries=2,
-            )
+            async with self.semaphore:
+                return await self.client.chat.completions.create(
+                    model=self.model_name,
+                    response_model=UniversityInfo,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "Extract the university's basic information from the prospectus. Return valid JSON."
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Extract the university name, short name (if any), and location.\n\nDATA:\n{context_text}"
+                        }
+                    ],
+                    max_retries=3,
+                )
         except Exception as e:
-            logger.error(f"Failed to extract university info: {e}")
+            logger.error(f"Failed to extract university info: {type(e).__name__}: {e}")
             return UniversityInfo()
 
     async def extract_all(self, chunks: List[TextChunk]) -> UniversityExtraction:
-        logger.info(f"Starting parallel extraction on {len(chunks)} chunks")
+        logger.info(f"Starting sequential extraction on {len(chunks)} chunks (optimized for VM Ollama)")
+        logger.info("Step 1/5: Extracting university info...")
+        try:
+            uni_info = await self.extract_university_info(chunks)
+        except Exception as e:
+            logger.error(f"University info extraction failed: {e}")
+            uni_info = UniversityInfo()
 
-        uni_task = self.extract_university_info(chunks)
+        logger.info("Step 2/5: Extracting departments...")
+        try:
+            dept_data = await self._extract_section(
+                chunks, DepartmentList, ["departments", "programs", "general"], 
+                "Extract all academic departments and their programs. For each department, list its name and programs offered."
+            )
+        except Exception as e:
+            logger.error(f"Department extraction failed: {e}")
+            dept_data = DepartmentList()
         
-        dept_task = self._extract_section(
-            chunks, DepartmentList, ["departments", "programs", "general"], 
-            "Extract all academic departments and their programs."
-        )
+        logger.info("Step 3/5: Extracting facilities...")
+        try:
+            fac_data = await self._extract_section(
+                chunks, FacilityList, ["facilities"], 
+                "Extract all campus facilities."
+            )
+        except Exception as e:
+            logger.error(f"Facility extraction failed: {e}")
+            fac_data = FacilityList()
         
-        fac_task = self._extract_section(
-            chunks, FacilityList, ["facilities"], 
-            "Extract all campus facilities."
-        )
+        logger.info("Step 4/5: Extracting fees...")
+        try:
+            fee_data = await self._extract_section(
+                chunks, FeeList, ["fees"], 
+                "Extract all tuition and fee information."
+            )
+        except Exception as e:
+            logger.error(f"Fee extraction failed: {e}")
+            fee_data = FeeList()
         
-        fee_task = self._extract_section(
-            chunks, FeeList, ["fees"], 
-            "Extract all tuition and fee information."
-        )
-        
-        adm_task = self._extract_section(
-            chunks, AdmissionInfo, ["admissions"], 
-            "Extract admission criteria and deadlines."
-        )
-
-        results = await asyncio.gather(
-            uni_task, dept_task, fac_task, fee_task, adm_task, 
-            return_exceptions=True
-        )
-
-        uni_info = results[0] if not isinstance(results[0], Exception) else UniversityInfo()
-        dept_data = results[1] if not isinstance(results[1], Exception) else DepartmentList()
-        fac_data = results[2] if not isinstance(results[2], Exception) else FacilityList()
-        fee_data = results[3] if not isinstance(results[3], Exception) else FeeList()
-        admissions = results[4] if not isinstance(results[4], Exception) else None
+        logger.info("Step 5/5: Extracting admissions...")
+        try:
+            admissions = await self._extract_section(
+                chunks, AdmissionInfo, ["admissions"], 
+                "Extract admission criteria and deadlines."
+            )
+        except Exception as e:
+            logger.error(f"Admission extraction failed: {e}")
+            admissions = None
 
         logger.info(f"Extracted university: {uni_info.name}")
         logger.info(f"Extracted {len(dept_data.items)} departments")

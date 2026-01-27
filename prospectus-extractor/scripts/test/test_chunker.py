@@ -4,12 +4,12 @@ import os
 import logging
 from datetime import datetime
 
-# Add src to python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+# Add project root to python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from services.document_parser import document_parser_service
-from services.chunker import chunker_service
-from services.blob_storage import blob_storage # Re-using for download
+from src.services.document_parser import document_parser_service
+from src.services.chunker import chunker_service
+from src.services.blob_storage import blob_storage # Re-using for download
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
@@ -45,7 +45,7 @@ async def test_chunking():
     headings = [c for c in chunks if c.chunk_type == "heading"] # String match or Enum match depending on repr
     # Enum is 'heading' value
     
-    from models.db import ChunkType
+    from src.models.db import ChunkType
     headings = [c for c in chunks if c.chunk_type == ChunkType.HEADING]
     paragraphs = [c for c in chunks if c.chunk_type == ChunkType.PARAGRAPH]
     lists = [c for c in chunks if c.chunk_type == ChunkType.LIST]

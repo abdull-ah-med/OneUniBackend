@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # Processing
     chunk_size: int = Field(default=1000)
-    chunk_overlap: int = Field(default=200)
+    chunk_overlap: int = Field(default=350)
 
     class Config:
         env_file = ".env"

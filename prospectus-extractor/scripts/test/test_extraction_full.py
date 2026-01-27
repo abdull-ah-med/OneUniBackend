@@ -32,9 +32,6 @@ async def run_full_extraction():
     print(f"Generated {len(chunks)} chunks.")
 
     print(f"\n[{datetime.now().time()}] === 3. LLM EXTRACTION (This may take a while...) ===")
-    # Limit chunks for testing if needed, or pass all
-    # For now, let's pass all but check if it's too huge. 
-    # LLM Service logic currently chunks[:15] if no relevant tags found, but here we have Tags!
     
     uni_extraction = await extraction_service.extract_all(chunks)
     
@@ -64,8 +61,6 @@ async def run_full_extraction():
         print(f"Deadlines: {uni_extraction.admissions.important_dates}")
     else:
         print("No admission info found.")
-
-    # Save to JSON for inspection
     with open("scripts/test/extraction_result.json", "w") as f:
         f.write(uni_extraction.model_dump_json(indent=2))
     print(f"\nFull result saved to scripts/test/extraction_result.json")

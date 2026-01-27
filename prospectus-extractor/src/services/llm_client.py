@@ -257,18 +257,14 @@ class ExtractionService:
         primary_tags: List[str],
         prompt_instruction: str,
         fallback_tags: List[str] = None,
-        batch_size: int = 15,
-        max_chunks: int = 120  # Increased for better coverage
+        batch_size: int = 5  # Smaller batches for better extraction with small models
     ) -> T:
         """Extract data for a section with flexible chunk selection."""
         relevant_chunks = self._get_relevant_chunks(chunks, primary_tags, fallback_tags)
         
-        # Sample chunks evenly if we have too many (better than truncating)
-        if len(relevant_chunks) > max_chunks:
-            relevant_chunks = self._sample_chunks_evenly(relevant_chunks, max_chunks)
-        
+        # Process ALL chunks - no limiting
         chunk_batches = [relevant_chunks[i:i + batch_size] for i in range(0, len(relevant_chunks), batch_size)]
-        logger.info(f"Processing {len(relevant_chunks)} chunks for {response_model.__name__} in {len(chunk_batches)} batches")
+        logger.info(f"Processing {len(relevant_chunks)} chunks for {response_model.__name__} in {len(chunk_batches)} batches (batch_size={batch_size})")
         
         results = []
         for i, batch in enumerate(chunk_batches):
@@ -371,8 +367,7 @@ class ExtractionService:
                 DepartmentList, 
                 primary_tags=["departments"],
                 fallback_tags=["programs", "curriculum", "general"],
-                prompt_instruction=PROMPTS["departments"],
-                max_chunks=150  # More for departments since there are many
+                prompt_instruction=PROMPTS["departments"]
             )
         except Exception as e:
             logger.error(f"Department extraction failed: {e}")
@@ -386,8 +381,7 @@ class ExtractionService:
                 FacilityList, 
                 primary_tags=["facilities"],
                 fallback_tags=["departments", "general"],
-                prompt_instruction=PROMPTS["facilities"],
-                max_chunks=90
+                prompt_instruction=PROMPTS["facilities"]
             )
         except Exception as e:
             logger.error(f"Facility extraction failed: {e}")
@@ -401,8 +395,7 @@ class ExtractionService:
                 FeeList, 
                 primary_tags=["fees"],
                 fallback_tags=["admissions", "general"],
-                prompt_instruction=PROMPTS["fees"],
-                max_chunks=60
+                prompt_instruction=PROMPTS["fees"]
             )
         except Exception as e:
             logger.error(f"Fee extraction failed: {e}")
@@ -416,8 +409,7 @@ class ExtractionService:
                 AdmissionInfo, 
                 primary_tags=["admissions"],
                 fallback_tags=["requirements", "general"],
-                prompt_instruction=PROMPTS["admissions"],
-                max_chunks=60
+                prompt_instruction=PROMPTS["admissions"]
             )
         except Exception as e:
             logger.error(f"Admission extraction failed: {e}")

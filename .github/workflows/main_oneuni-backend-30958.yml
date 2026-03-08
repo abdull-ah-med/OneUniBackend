@@ -16,7 +16,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Publish
-        run: dotnet publish -c Release -o ./publish
+        run: dotnet publish -c Release -o ./publish --self-contained true -r linux-x64
 
       - name: Zip artifact
         run: zip -r deploy.zip ./publish

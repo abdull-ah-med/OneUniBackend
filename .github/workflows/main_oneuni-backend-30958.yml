@@ -19,7 +19,7 @@ jobs:
         run: dotnet publish -c Release -o ./publish --self-contained true -r linux-x64
 
       - name: Zip artifact
-        run: zip -r deploy.zip ./publish
+        run: cd publish && zip -r ../deploy.zip .
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
